@@ -1,0 +1,67 @@
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+
+import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
+import GroupsScreen from './src/screens/GroupsScreen';
+import GroupChatScreen from './src/screens/GroupChatScreen';
+import NewGroupScreen from './src/screens/NewGroupScreen';
+import MembersScreen from './src/screens/MembersScreen';
+
+const Stack = createNativeStackNavigator();
+
+const screenOptions = {
+  headerStyle: { backgroundColor: '#1f2c33' },
+  headerTintColor: '#e9edef',
+  headerTitleStyle: { fontWeight: '700' },
+  contentStyle: { backgroundColor: '#111b21' },
+};
+
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ ...screenOptions, headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function MainStack() {
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen name="Groups" component={GroupsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="GroupChat" component={GroupChatScreen} />
+      <Stack.Screen name="NewGroup" component={NewGroupScreen} options={{ title: 'New Group' }} />
+      <Stack.Screen name="Members" component={MembersScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function RootNavigator() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#111b21', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#00a884" />
+      </View>
+    );
+  }
+
+  return user ? <MainStack /> : <AuthStack />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <StatusBar style="light" />
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}

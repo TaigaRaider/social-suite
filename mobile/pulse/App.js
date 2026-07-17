@@ -1,0 +1,123 @@
+import React from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+
+import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
+import ConversationsScreen from './src/screens/ConversationsScreen';
+import ChatScreen from './src/screens/ChatScreen';
+import NewChatScreen from './src/screens/NewChatScreen';
+
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+const RootStack = createNativeStackNavigator();
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#16213e',
+          borderTopColor: '#2a2a4a',
+          borderTopWidth: StyleSheet.hairlineWidth,
+          paddingBottom: 4,
+          height: 56,
+        },
+        tabBarActiveTintColor: '#0084ff',
+        tabBarInactiveTintColor: '#8899a6',
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+          if (route.name === 'Conversations') iconName = 'chatbubbles';
+          else if (route.name === 'Friends') iconName = 'people';
+          else if (route.name === 'Profile') iconName = 'person';
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Conversations" component={ConversationsScreen} />
+      <Tab.Screen
+        name="Friends"
+        component={ConversationsScreen}
+        options={{ tabBarLabel: 'Friends' }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ConversationsScreen}
+        options={{ tabBarLabel: 'Profile' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function AppNavigator() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0084ff" />
+      </View>
+    );
+  }
+
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      {!user ? (
+        <RootStack.Group>
+          <RootStack.Screen name="Login" component={LoginScreen} />
+          <RootStack.Screen name="Signup" component={SignupScreen} />
+        </RootStack.Group>
+      ) : (
+        <RootStack.Group>
+          <RootStack.Screen name="Main" component={MainTabs} />
+          <RootStack.Screen
+            name="Chat"
+            component={ChatScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              headerTitle: route.params?.name || 'Chat',
+              headerStyle: { backgroundColor: '#16213e' },
+              headerTintColor: '#ffffff',
+              headerTitleStyle: { fontWeight: '600' },
+            })}
+          />
+          <RootStack.Screen
+            name="NewChat"
+            component={NewChatScreen}
+            options={{
+              headerShown: true,
+              headerTitle: 'New Conversation',
+              headerStyle: { backgroundColor: '#16213e' },
+              headerTintColor: '#ffffff',
+              headerTitleStyle: { fontWeight: '600' },
+            }}
+          />
+        </RootStack.Group>
+      )}
+    </RootStack.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

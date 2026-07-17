@@ -1,0 +1,37 @@
+export default {
+  expo: {
+    name: "Wave",
+    slug: "wave",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/icon.png",
+    userInterfaceStyle: "dark",
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#111b21"
+    },
+    assetBundlePatterns: ["**/*"],
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "com.socialsuite.wave",
+      buildNumber: "1"
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
+        backgroundColor: "#111b21"
+      },
+      package: "com.socialsuite.wave",
+      versionCode: 1,
+      permissions: ["INTERNET"]
+    },
+    web: { favicon: "./assets/favicon.png" },
+    extra: {
+      apiUrl: process.env.API_URL || "http://10.0.2.2:3004/api",
+      eas: { projectId: "wave-social-suite" }
+    },
+    plugins: [],
+    scheme: "wave"
+  }
+};

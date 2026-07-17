@@ -1,0 +1,148 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useAuth } from '../context/AuthContext';
+
+export default function LoginScreen({ navigation }) {
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      await login(email.trim(), password);
+    } catch (e) {
+      Alert.alert('Login Failed', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={styles.inner}>
+        <Text style={styles.logo}>whisper</Text>
+        <Text style={styles.subtitle}>See what's happening.</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#555"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          autoCorrect={false}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#555"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Log in</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+          <Text style={styles.link}>
+            Don't have an account? <Text style={styles.linkBold}>Sign up</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#181818',
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  logo: {
+    fontSize: 42,
+    fontWeight: '300',
+    color: '#fff',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#777',
+    fontSize: 15,
+    marginBottom: 40,
+  },
+  input: {
+    width: '100%',
+    height: 52,
+    backgroundColor: '#262626',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#363636',
+  },
+  button: {
+    width: '100%',
+    height: 52,
+    backgroundColor: '#fff',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  link: {
+    color: '#777',
+    marginTop: 24,
+    fontSize: 14,
+  },
+  linkBold: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+});
