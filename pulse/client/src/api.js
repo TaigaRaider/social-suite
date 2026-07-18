@@ -25,6 +25,9 @@ export const api = {
   getMessages: (convId) => request(`/conversations/${convId}/messages`),
   sendMessage: (convId, content) => request(`/conversations/${convId}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
   getUnreadCount: () => request('/conversations/unread/count'),
+  emitTyping: (conversationId) => request('/conversations/typing', { method: 'POST', body: JSON.stringify({ conversationId }) }),
+  getTyping: (conversationId) => request(`/conversations/typing/${conversationId}`),
+  searchMessages: (q) => request(`/conversations/search?q=${encodeURIComponent(q)}`),
 
   getFriends: () => request('/friends'),
   addFriend: (userId) => request(`/friends/request/${userId}`, { method: 'POST' }),
@@ -34,4 +37,9 @@ export const api = {
   getNotifications: () => request('/notifications'),
   markNotificationsRead: () => request('/notifications/read', { method: 'PUT' }),
   getUnreadNotifications: () => request('/notifications/unread/count'),
+
+  toggleReaction: (targetId, targetType, emoji) => request('/reactions', { method: 'POST', body: JSON.stringify({ targetId, targetType, emoji }) }),
+  getReactions: (targetId, targetType) => request(`/reactions/${targetId}/${targetType}`),
+
+  exportData: () => request('/export'),
 };

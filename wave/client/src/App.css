@@ -4,7 +4,8 @@
   box-sizing: border-box;
 }
 
-:root {
+:root,
+[data-theme="dark"] {
   --bg-primary: #111b21;
   --bg-secondary: #1f2c33;
   --bg-tertiary: #202c33;
@@ -27,6 +28,35 @@
   --search-bg: #202c33;
   --bubble-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
   --unread-badge: #00a884;
+  --skeleton-base: #2a3942;
+  --skeleton-shine: #3b4d57;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f6f6;
+  --bg-chat: #e5ddd5;
+  --bg-sent: #d9fdd3;
+  --bg-received: #ffffff;
+  --bg-input: #f0f2f5;
+  --bg-hover: #f5f6f6;
+  --bg-active: #e9edef;
+  --accent: #00a884;
+  --accent-light: #25d366;
+  --accent-dark: #005c4b;
+  --text-primary: #111b21;
+  --text-secondary: #667781;
+  --text-muted: #8696a0;
+  --border-color: #e9edef;
+  --danger: #ea4335;
+  --header-bg: #f0f2f5;
+  --sidebar-bg: #ffffff;
+  --search-bg: #f0f2f5;
+  --bubble-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+  --unread-badge: #00a884;
+  --skeleton-base: #e0e0e0;
+  --skeleton-shine: #f0f0f0;
 }
 
 body {
@@ -589,6 +619,44 @@ a:hover {
   color: rgba(255,255,255,0.5);
 }
 
+/* Typing indicator */
+.wave-typing-indicator {
+  align-self: flex-start;
+  padding: 4px 0;
+}
+
+.wave-typing-dots {
+  display: inline-flex;
+  gap: 3px;
+  padding: 8px 12px;
+  background: var(--bg-received);
+  border-radius: 8px;
+  border-top-left-radius: 2px;
+  box-shadow: var(--bubble-shadow);
+}
+
+.wave-typing-dots span {
+  width: 7px;
+  height: 7px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: waveTypingBounce 1.4s infinite ease-in-out;
+}
+
+.wave-typing-dots span:nth-child(1) { animation-delay: 0s; }
+.wave-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.wave-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes waveTypingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Message search styles */
+.no-groups .btn-accent + .no-groups-icon {
+  margin-bottom: 0;
+}
+
 /* Chat input */
 .chat-input-area {
   padding: 10px 16px;
@@ -1080,4 +1148,186 @@ a:hover {
 
 .btn-danger:hover {
   background: rgba(234,67,53,0.1);
+}
+
+/* Onboarding */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+
+.onboarding-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 40px 32px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.onboarding-icon {
+  font-size: 56px;
+  margin-bottom: 20px;
+}
+
+.onboarding-card h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.onboarding-card p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.onboarding-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.onboarding-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  transition: background 0.3s, transform 0.3s;
+}
+
+.onboarding-dot.active {
+  background: var(--accent);
+  transform: scale(1.2);
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.onboarding-btn {
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+  font-family: 'Nunito', sans-serif;
+}
+
+.onboarding-btn.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.onboarding-btn.primary:hover {
+  background: var(--accent-light);
+}
+
+.onboarding-btn.secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.onboarding-btn.secondary:hover {
+  background: var(--bg-hover);
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-base) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.skeleton-group-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-group-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+}
+
+.skeleton-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-group-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.skeleton-group-right {
+  flex-shrink: 0;
+}
+
+.skeleton-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 60px;
+  justify-content: flex-end;
+}
+
+.skeleton-bubble {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-received);
+  max-width: 60%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeleton-bubble.sent {
+  align-self: flex-end;
+}
+
+.skeleton-bubble.received {
+  align-self: flex-start;
+}
+
+/* Theme toggle */
+.header-btn .theme-icon {
+  font-size: 18px;
 }

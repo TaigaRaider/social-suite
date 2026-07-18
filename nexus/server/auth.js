@@ -1,9 +1,14 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn('[SECURITY] JWT_SECRET environment variable not set. Using auto-generated key. Set JWT_SECRET in production!');
+}
+const SECRET = JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 export function generateToken(userId) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ userId }, SECRET, { expiresIn: '7d' });
 }
 
 export function auth(req, res, next) {
@@ -12,7 +17,7 @@ export function auth(req, res, next) {
     return res.status(401).json({ error: 'No token provided' });
   }
   try {
-    const decoded = jwt.verify(header.split(' ')[1], JWT_SECRET);
+    const decoded = jwt.verify(header.split(' ')[1], SECRET);
     req.userId = decoded.userId;
     next();
   } catch {

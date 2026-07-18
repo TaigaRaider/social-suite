@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,9 @@ function timeAgo(dateStr) {
   return `${days}d`;
 }
 
-export default function PostCard({ post, onDelete }) {
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '👎'];
+
+export default function PostCard({ post, onDelete, scheduled, onCancelScheduled }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [liked, setLiked] = useState(!!post.isLiked);
@@ -26,6 +28,26 @@ export default function PostCard({ post, onDelete }) {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(post.commentCount);
   const [submitting, setSubmitting] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [reactions, setReactions] = useState([]);
+  const [userReactions, setUserReactions] = useState([]);
+
+  useEffect(() => {
+    api.getReactions(post.id, 'post').then(data => {
+      setReactions(data.reactions || []);
+      setUserReactions(data.userReactions || []);
+    }).catch(() => {});
+  }, [post.id]);
+
+  const handleReaction = async (emoji) => {
+    try {
+      await api.toggleReaction(post.id, 'post', emoji);
+      const data = await api.getReactions(post.id, 'post');
+      setReactions(data.reactions || []);
+      setUserReactions(data.userReactions || []);
+    } catch {}
+    setShowReactionPicker(false);
+  };
 
   const handleLike = async () => {
     try {
@@ -89,20 +111,55 @@ export default function PostCard({ post, onDelete }) {
           style={{ cursor: 'pointer' }}
         />
         <Link to={`/profile/${post.userId}`} className="post-user">{displayName}</Link>
+        {scheduled && (
+          <span style={{ fontSize: 12, color: '#833ab4', marginLeft: 'auto', marginRight: 8 }}>&#128197; Scheduled: {new Date(post.scheduledAt).toLocaleString()}</span>
+        )}
         {post.userId === user?.id && (
-          <button className="post-delete" onClick={handleDelete}>&#10005;</button>
+          scheduled ? (
+            <button className="post-delete" onClick={() => onCancelScheduled?.(post.id)} style={{ color: 'var(--danger)' }} title="Cancel scheduled post">&#10005;</button>
+          ) : (
+            <button className="post-delete" onClick={handleDelete}>&#10005;</button>
+          )
         )}
       </div>
       <img className="post-image" src={post.image} alt="" />
       <div className="post-actions">
-        <button className={`post-action-btn ${liked ? 'liked' : ''}`} onClick={handleLike}>
-          {liked ? '♥' : '♡'}
-        </button>
+        <div
+          onMouseEnter={() => setShowReactionPicker(true)}
+          onMouseLeave={() => setShowReactionPicker(false)}
+          style={{ position: 'relative' }}
+        >
+          <button className={`post-action-btn ${userReactions.length > 0 ? 'liked' : ''}`} onClick={() => handleReaction(userReactions.length > 0 ? userReactions[0] : '👍')}>
+            {userReactions.length > 0 ? userReactions[0] : '♡'}
+          </button>
+          {showReactionPicker && (
+            <div style={{ position: 'absolute', bottom: '100%', left: 0, display: 'flex', gap: 2, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 24, padding: '6px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', zIndex: 10 }}>
+              {REACTION_EMOJIS.map(emoji => (
+                <button key={emoji} onClick={(e) => { e.stopPropagation(); handleReaction(emoji); }}
+                  style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 8, transition: 'transform 0.15s', lineHeight: 1 }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.3)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button className="post-action-btn" onClick={toggleComments}>
           &#128172;
         </button>
       </div>
-      {likeCount > 0 && <div className="post-likes">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</div>}
+      {(reactions.length > 0 || likeCount > 0) && (
+        <div style={{ padding: '0 14px 4px', display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
+          {reactions.map((r, i) => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, cursor: 'pointer', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 12, border: '1px solid var(--border)' }}
+              onClick={() => handleReaction(r.emoji)} title={r.emoji}>
+              {r.emoji} {r.count}
+            </span>
+          ))}
+          {!reactions.length && likeCount > 0 && <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>}
+        </div>
+      )}
       {post.caption && (
         <div className="post-caption">
           <Link to={`/profile/${post.userId}`}><strong>{displayName}</strong></Link>
@@ -153,7 +210,7 @@ export default function PostCard({ post, onDelete }) {
           </form>
         </div>
       )}
-      <div className="post-time">{timeAgo(post.createdAt)}</div>
+      <div className="post-time">{scheduled ? '' : timeAgo(post.createdAt)}</div>
     </div>
   );
 }

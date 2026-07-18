@@ -1,7 +1,29 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import { api } from '../api';
+import ShortcutsModal from './ShortcutsModal';
 
 export default function Navbar({ user, onLogout, unreadCount = 0 }) {
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const data = await api.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wave-data-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setExporting(false);
+  };
   const initials = user
     ? (user.firstName && user.lastName
         ? (user.firstName[0] + user.lastName[0]).toUpperCase()
@@ -29,15 +51,24 @@ export default function Navbar({ user, onLogout, unreadCount = 0 }) {
         </div>
         <div
           className="user-avatar small"
-          style={{ cursor: 'pointer', background: 'var(--accent-dark)' }}
+          style={{ cursor: 'pointer', background: 'var(--accent-dark)', position: 'relative' }}
           title={user?.username}
         >
           {initials}
+          <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--bg-primary)', background: user?.status === 'online' ? '#4caf50' : user?.status === 'away' ? '#ff9800' : user?.status === 'dnd' ? '#f44336' : '#9e9e9e' }} />
         </div>
+        <button className="header-btn" onClick={toggleTheme} title="Toggle theme">
+          {theme === 'dark' ? '&#9788;' : '&#9790;'}
+        </button>
         <button className="header-btn" onClick={onLogout} title="Logout">
           &#8594;
         </button>
+        <button className="header-btn" onClick={handleExport} disabled={exporting} title="Download My Data" style={{ fontSize: 12 }}>
+          {exporting ? '...' : '↓'}
+        </button>
+        <button className="header-btn" onClick={() => setShowShortcuts(true)} title="Keyboard shortcuts" style={{ fontSize: 14, fontWeight: 700 }}>?</button>
       </div>
+      {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
     </div>
   );
 }

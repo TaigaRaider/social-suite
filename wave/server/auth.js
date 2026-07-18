@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
-const SECRET = 'wave-secret-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn('[SECURITY] JWT_SECRET environment variable not set. Using auto-generated key. Set JWT_SECRET in production!');
+}
+const SECRET = JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 export function generateToken(user) {
   return jwt.sign({ id: user.id, username: user.username, email: user.email }, SECRET, { expiresIn: '7d' });

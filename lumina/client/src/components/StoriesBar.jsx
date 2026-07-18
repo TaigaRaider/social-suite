@@ -3,11 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 
+const STORY_REACTION_EMOJIS = ['❤️', '😮', '👍', '😂'];
+
 export default function StoriesBar() {
   const [stories, setStories] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [storyImage, setStoryImage] = useState('');
   const [creating, setCreating] = useState(false);
+  const [viewingStory, setViewingStory] = useState(null);
+  const [storyReactions, setStoryReactions] = useState({});
+  const [userStoryReactions, setUserStoryReactions] = useState({});
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -16,6 +21,16 @@ export default function StoriesBar() {
   };
 
   useEffect(() => { loadStories(); }, []);
+
+  useEffect(() => {
+    if (viewingStory) {
+      const storyId = viewingStory.id;
+      api.getStoryReactions(storyId).then(data => {
+        setStoryReactions(prev => ({ ...prev, [storyId]: data.reactions || [] }));
+        setUserStoryReactions(prev => ({ ...prev, [storyId]: data.userReactions || [] }));
+      }).catch(() => {});
+    }
+  }, [viewingStory]);
 
   const grouped = {};
   stories.forEach((s) => {
@@ -43,6 +58,16 @@ export default function StoriesBar() {
     }
   };
 
+  const handleStoryReaction = async (emoji) => {
+    if (!viewingStory) return;
+    try {
+      await api.reactStory(viewingStory.id, emoji);
+      const data = await api.getStoryReactions(viewingStory.id);
+      setStoryReactions(prev => ({ ...prev, [viewingStory.id]: data.reactions || [] }));
+      setUserStoryReactions(prev => ({ ...prev, [viewingStory.id]: data.userReactions || [] }));
+    } catch {}
+  };
+
   return (
     <>
       <div className="stories-bar">
@@ -53,7 +78,7 @@ export default function StoriesBar() {
           <span className="story-username">Your story</span>
         </div>
         {storyUsers.map((s) => (
-          <div key={s.userId} className="story-item" onClick={() => navigate(`/profile/${s.userId}`)}>
+          <div key={s.userId} className="story-item" onClick={() => setViewingStory(s.items[0])}>
             <div className="story-ring">
               <img
                 className="story-avatar"
@@ -65,6 +90,37 @@ export default function StoriesBar() {
           </div>
         ))}
       </div>
+
+      {viewingStory && (
+        <div className="modal-overlay" onClick={() => setViewingStory(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', maxWidth: 400, width: '100%' }}>
+            <button onClick={() => setViewingStory(null)} style={{ position: 'absolute', top: -10, right: -10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 20, fontSize: 16, color: 'var(--text-primary)' }}>&#10005;</button>
+            <img src={viewingStory.image} alt="" style={{ width: '100%', borderRadius: 12, display: 'block' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 12, background: 'var(--bg-secondary)', borderRadius: 24, padding: '8px 12px' }}>
+              {STORY_REACTION_EMOJIS.map(emoji => (
+                <button key={emoji} onClick={() => handleStoryReaction(emoji)}
+                  style={{
+                    fontSize: 24, background: userStoryReactions[viewingStory.id]?.includes(emoji) ? 'rgba(131,58,180,0.2)' : 'none',
+                    border: userStoryReactions[viewingStory.id]?.includes(emoji) ? '1px solid rgba(131,58,180,0.4)' : '1px solid transparent',
+                    cursor: 'pointer', padding: '6px 10px', borderRadius: 12, transition: 'transform 0.15s', lineHeight: 1
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.2)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            {storyReactions[viewingStory.id]?.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+                {storyReactions[viewingStory.id].map((r, i) => (
+                  <span key={i}>{r.emoji} {r.count}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showCreate && (
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

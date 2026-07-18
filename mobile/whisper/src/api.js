@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://10.0.2.2:3005/api';
 
 async function request(path, options = {}) {
@@ -18,8 +19,6 @@ async function request(path, options = {}) {
 
   return data;
 }
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = {
   login: (email, password) =>

@@ -1,12 +1,27 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { body, validationResult } from 'express-validator';
 import { query, queryOne, run } from '../db.js';
 import { generateToken, auth } from '../auth.js';
 
 const router = Router();
 
-router.post('/register', async (req, res) => {
+const validate = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ error: errors.array()[0].msg });
+    return false;
+  }
+  return true;
+};
+
+router.post('/register', [
+  body('username').trim().isLength({ min: 3, max: 30 }).withMessage('Username must be 3-30 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
   try {
+    if (!validate(req, res)) return;
     const { username, email, password, firstName, lastName } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'Username, email and password are required' });
@@ -28,17 +43,41 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').notEmpty().withMessage('Password required')
+], async (req, res) => {
   try {
+    if (!validate(req, res)) return;
     const { email, password } = req.body;
+
     const user = queryOne('SELECT * FROM users WHERE email = ?', [email]);
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    // Account lockout check
+    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+      const remainingMs = new Date(user.lockedUntil) - new Date();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      return res.status(423).json({ error: `Account locked. Try again in ${remainingMin} minute(s).` });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
+      const attempts = (user.failedAttempts || 0) + 1;
+      if (attempts >= 5) {
+        const lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+        run('UPDATE users SET failedAttempts = ?, lockedUntil = ? WHERE id = ?', [attempts, lockUntil, user.id]);
+        return res.status(423).json({ error: 'Account locked due to too many failed attempts. Try again in 15 minutes.' });
+      }
+      run('UPDATE users SET failedAttempts = ? WHERE id = ?', [attempts, user.id]);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    // Reset failed attempts on success
+    run('UPDATE users SET failedAttempts = 0, lockedUntil = NULL WHERE id = ?', [user.id]);
+
     run('UPDATE users SET status = ?, lastSeen = CURRENT_TIMESTAMP WHERE id = ?', ['online', user.id]);
     const safeUser = { id: user.id, username: user.username, email: user.email, firstName: user.firstName, lastName: user.lastName, bio: user.bio, avatar: user.avatar, status: 'online' };
     const token = generateToken(safeUser);

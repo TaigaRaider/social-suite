@@ -35,7 +35,7 @@ router.get('/', auth, (req, res) => {
   res.json(conversations);
 });
 
-router.post('/', auth, (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { userId } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId is required' });
 
@@ -115,6 +115,99 @@ router.post('/:id/messages', auth, (req, res) => {
   }
 
   res.json(message);
+});
+
+router.put('/:id/messages/:messageId', auth, (req, res) => {
+  const { content } = req.body;
+  if (!content || !content.trim()) return res.status(400).json({ error: 'Content is required' });
+
+  const message = queryOne(
+    'SELECT m.id, m.senderId, m.conversationId FROM messages m WHERE m.id = ? AND m.conversationId = ?',
+    [req.params.messageId, req.params.id]
+  );
+  if (!message) return res.status(404).json({ error: 'Message not found' });
+  if (message.senderId !== req.userId) return res.status(403).json({ error: 'Can only edit your own messages' });
+
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const msgTime = queryOne('SELECT createdAt FROM messages WHERE id = ?', [req.params.messageId]);
+  if (msgTime && msgTime.createdAt < fiveMinAgo) {
+    return res.status(400).json({ error: 'Can only edit messages within 5 minutes' });
+  }
+
+  run('UPDATE messages SET content = ?, edited = 1 WHERE id = ?', [content.trim(), req.params.messageId]);
+
+  const updated = queryOne(
+    `SELECT m.*, u.username as senderUsername, u.firstName as senderFirstName, u.lastName as senderLastName, u.avatar as senderAvatar
+     FROM messages m JOIN users u ON m.senderId = u.id WHERE m.id = ?`,
+    [req.params.messageId]
+  );
+  res.json(updated);
+});
+
+router.delete('/:id/messages/:messageId', auth, (req, res) => {
+  const message = queryOne(
+    'SELECT m.id, m.senderId FROM messages m WHERE m.id = ? AND m.conversationId = ?',
+    [req.params.messageId, req.params.id]
+  );
+  if (!message) return res.status(404).json({ error: 'Message not found' });
+  if (message.senderId !== req.userId) return res.status(403).json({ error: 'Can only delete your own messages' });
+
+  run('DELETE FROM messages WHERE id = ?', [req.params.messageId]);
+  res.json({ success: true, deleted: true });
+});
+
+router.post('/typing', auth, (req, res) => {
+  const { conversationId } = req.body;
+  if (!conversationId) return res.status(400).json({ error: 'conversationId is required' });
+
+  const member = queryOne(
+    'SELECT id FROM conversation_members WHERE conversationId = ? AND userId = ?',
+    [conversationId, req.userId]
+  );
+  if (!member) return res.status(403).json({ error: 'Not a member of this conversation' });
+
+  const expiresAt = new Date(Date.now() + 5000).toISOString();
+  run('DELETE FROM typing WHERE userId = ? AND targetId = ?', [req.userId, conversationId]);
+  run('INSERT INTO typing (userId, targetId, expiresAt) VALUES (?, ?, ?)', [req.userId, conversationId, expiresAt]);
+  res.json({ ok: true });
+});
+
+router.get('/typing/:conversationId', auth, (req, res) => {
+  const member = queryOne(
+    'SELECT id FROM conversation_members WHERE conversationId = ? AND userId = ?',
+    [req.params.conversationId, req.userId]
+  );
+  if (!member) return res.status(403).json({ error: 'Not a member of this conversation' });
+
+  const now = new Date().toISOString();
+  const typers = query(
+    `SELECT t.userId, u.username, u.firstName, u.lastName
+     FROM typing t JOIN users u ON t.userId = u.id
+     WHERE t.targetId = ? AND t.userId != ? AND t.expiresAt > ?`,
+    [req.params.conversationId, req.userId, now]
+  );
+  res.json(typers);
+});
+
+router.get('/search', auth, (req, res) => {
+  const { q } = req.query;
+  if (!q || !q.trim()) return res.json([]);
+  const term = `%${q.trim()}%`;
+  const results = query(
+    `SELECT m.id, m.content, m.createdAt, m.conversationId,
+            m.senderId, m.read,
+            u.username as senderUsername, u.firstName as senderFirstName, u.lastName as senderLastName,
+            c2.username as otherUsername, c2.firstName as otherFirstName, c2.lastName as otherLastName
+     FROM messages m
+     JOIN users u ON m.senderId = u.id
+     JOIN conversation_members cm ON m.conversationId = cm.conversationId AND cm.userId = ?
+     JOIN conversation_members cm2 ON m.conversationId = cm2.conversationId AND cm2.userId != ?
+     JOIN users c2 ON cm2.userId = c2.id
+     WHERE m.content LIKE ?
+     ORDER BY m.createdAt DESC LIMIT 30`,
+    [req.userId, req.userId, term]
+  );
+  res.json(results);
 });
 
 async function buildConversationResponse(convId, userId) {

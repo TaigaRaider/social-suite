@@ -11,6 +11,7 @@ export default function GroupChat({ groupId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [showMembers, setShowMembers] = useState(false);
   const [sendError, setSendError] = useState('');
+  const [typingUsers, setTypingUsers] = useState([]);
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
@@ -18,8 +19,13 @@ export default function GroupChat({ groupId, onBack }) {
   useEffect(() => {
     loadGroup();
     loadMessages();
+    api.messages.markRead(groupId).catch(() => {});
     const interval = setInterval(loadMessages, 3000);
-    return () => clearInterval(interval);
+    const typingInterval = setInterval(loadTyping, 2000);
+    return () => {
+      clearInterval(interval);
+      clearInterval(typingInterval);
+    };
   }, [groupId]);
 
   useEffect(() => {
@@ -43,6 +49,15 @@ export default function GroupChat({ groupId, onBack }) {
       console.error('Failed to load messages:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTyping = async () => {
+    try {
+      const data = await api.messages.getTyping(groupId);
+      setTypingUsers(data);
+    } catch {
+      setTypingUsers([]);
     }
   };
 
@@ -80,6 +95,12 @@ export default function GroupChat({ groupId, onBack }) {
 
   const memberCount = group.members ? group.members.length : 0;
 
+  const typingText = typingUsers.length > 0
+    ? typingUsers.length === 1
+      ? `${typingUsers[0].firstName || typingUsers[0].username} is typing...`
+      : `${typingUsers.length} people are typing...`
+    : null;
+
   return (
     <div className="chat-area">
       <div className="chat-header">
@@ -89,7 +110,11 @@ export default function GroupChat({ groupId, onBack }) {
         </div>
         <div className="chat-header-info">
           <h2>{group.name}</h2>
-          <p>{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
+          {typingText ? (
+            <p style={{ color: 'var(--accent)' }}>{typingText}</p>
+          ) : (
+            <p>{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
+          )}
         </div>
         <div className="chat-header-actions">
           <button onClick={() => setShowMembers(true)} title="Members">&#9776;</button>
@@ -115,6 +140,13 @@ export default function GroupChat({ groupId, onBack }) {
                 />
               );
             })}
+            {typingUsers.length > 0 && (
+              <div className="wave-typing-indicator">
+                <div className="wave-typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </>
         )}
@@ -125,7 +157,7 @@ export default function GroupChat({ groupId, onBack }) {
           {sendError}
         </div>
       )}
-      <ChatInput onSend={handleSend} />
+      <ChatInput onSend={handleSend} groupId={groupId} />
 
       {showMembers && (
         <MemberList

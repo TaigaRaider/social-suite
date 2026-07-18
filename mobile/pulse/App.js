@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SplashScreen from './src/components/SplashScreen';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 import ConversationsScreen from './src/screens/ConversationsScreen';
+import FriendsScreen from './src/screens/FriendsScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 
@@ -42,12 +46,12 @@ function MainTabs() {
       <Tab.Screen name="Conversations" component={ConversationsScreen} />
       <Tab.Screen
         name="Friends"
-        component={ConversationsScreen}
+        component={FriendsScreen}
         options={{ tabBarLabel: 'Friends' }}
       />
       <Tab.Screen
         name="Profile"
-        component={ConversationsScreen}
+        component={ProfileScreen}
         options={{ tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>
@@ -104,8 +108,15 @@ function AppNavigator() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(() => !AsyncStorage.getItem('pulse_splash_seen'));
+  const handleSplashEnd = useCallback(() => {
+    AsyncStorage.setItem('pulse_splash_seen', '1');
+    setShowSplash(false);
+  }, []);
+
   return (
     <AuthProvider>
+      {showSplash && <SplashScreen onAnimationEnd={handleSplashEnd} />}
       <NavigationContainer>
         <AppNavigator />
       </NavigationContainer>

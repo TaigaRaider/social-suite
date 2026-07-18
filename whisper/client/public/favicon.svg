@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="whisper-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181818"/>
+      <stop offset="100%" stop-color="#2d2d2d"/>
+    </linearGradient>
+    <filter id="whisper-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#whisper-bg)"/>
+  <g filter="url(#whisper-shadow)">
+    <!-- Stylized W as sound waves -->
+    <path d="M28 42L44 86L64 54L84 86L100 42" fill="none" stroke="white" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+    <!-- Whisper lines -->
+    <line x1="36" y1="96" x2="52" y2="96" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+    <line x1="56" y1="96" x2="72" y2="96" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+    <line x1="76" y1="96" x2="92" y2="96" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.2"/>
+  </g>
+</svg>

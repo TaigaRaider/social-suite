@@ -48,8 +48,8 @@ export const api = {
     login: (data) => post('/auth/login', data),
     me: () => get('/auth/me'),
     updateMe: (data) => put('/auth/me', data),
-    getUser: (id) => get(`/auth/users/${id}`),
-    searchUsers: (q) => get(`/auth/users/search?q=${encodeURIComponent(q)}`),
+    getUser: (id) => get(`/auth/user/${id}`),
+    searchUsers: (q) => get(`/auth/search?q=${encodeURIComponent(q)}`),
   },
 
   posts: {
@@ -65,9 +65,9 @@ export const api = {
   friends: {
     getFriends: () => get('/friends'),
     getFriendRequests: () => get('/friends/requests'),
-    sendFriendRequest: (userId) => post('/friends/request', { userId }),
-    acceptFriend: (userId) => post(`/friends/accept/${userId}`),
-    declineFriend: (userId) => post(`/friends/decline/${userId}`),
+    sendFriendRequest: (userId) => post(`/friends/request/${userId}`),
+    acceptFriend: (friendshipId) => put(`/friends/accept/${friendshipId}`),
+    declineFriend: (friendshipId) => put(`/friends/decline/${friendshipId}`),
     removeFriend: (userId) => del(`/friends/${userId}`),
     getSuggestions: () => get('/friends/suggestions'),
   },

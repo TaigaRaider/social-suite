@@ -44,6 +44,10 @@ export const api = {
     list: (groupId) => request(`/messages/group/${groupId}`),
     send: (groupId, content, replyToId) => request(`/messages/group/${groupId}`, { method: 'POST', body: JSON.stringify({ content, replyToId }) }),
     unreadCount: () => request('/messages/unread/count'),
+    emitTyping: (groupId) => request(`/messages/typing/${groupId}`, { method: 'POST' }),
+    getTyping: (groupId) => request(`/messages/typing/${groupId}`),
+    markRead: (groupId) => request(`/messages/mark-read/${groupId}`, { method: 'PUT' }),
+    search: (q) => request(`/messages/search?q=${encodeURIComponent(q)}`),
   },
   friends: {
     list: () => request('/friends'),
@@ -56,4 +60,10 @@ export const api = {
     unreadCount: () => request('/notifications/unread/count'),
     markRead: () => request('/notifications/read', { method: 'PUT' }),
   },
+  reactions: {
+    toggle: (targetId, targetType, emoji) => request('/reactions', { method: 'POST', body: JSON.stringify({ targetId, targetType, emoji }) }),
+    get: (targetId, targetType) => request(`/reactions/${targetId}/${targetType}`),
+  },
+  exportData: () => request('/export'),
+  updateStatus: (status) => request('/auth/status', { method: 'PUT', body: JSON.stringify({ status }) }),
 };

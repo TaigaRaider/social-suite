@@ -3,13 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import Navbar from '../components/Navbar';
+import { ConvoListSkeleton, ChatSkeleton } from '../components/Skeleton';
 
 export default function Messages() {
   const { user: currentUser } = useAuth();
   const { userId: selectedUserId } = useParams();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
+  const [convoLoading, setConvoLoading] = useState(true);
   const [messages, setMessages] = useState([]);
+  const [msgLoading, setMsgLoading] = useState(false);
   const [text, setText] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +20,7 @@ export default function Messages() {
   const messagesEnd = useRef(null);
 
   useEffect(() => {
-    api.getConversations().then(setConversations).catch(() => {});
+    api.getConversations().then(setConversations).catch(() => {}).finally(() => setConvoLoading(false));
   }, []);
 
   useEffect(() => {
@@ -31,12 +34,14 @@ export default function Messages() {
   }, [messages]);
 
   const loadChat = async (uid) => {
+    setMsgLoading(true);
     const [msgs, user] = await Promise.all([
       api.getMessages(uid),
       api.getUser(uid)
     ]);
     setMessages(msgs);
     setSelectedUser(user);
+    setMsgLoading(false);
     if (!conversations.find(c => c.id === parseInt(uid))) {
       setConversations([{ id: user.id, username: user.username, firstName: user.firstName, lastName: user.lastName, avatar: user.avatar, lastMessage: '', lastMessageAt: new Date().toISOString(), unreadCount: 0 }, ...conversations]);
     }
@@ -102,25 +107,28 @@ export default function Messages() {
                 </div>
               )}
             </div>
-            {conversations.length === 0 && !searchTerm && (
+            {convoLoading ? (
+              <ConvoListSkeleton />
+            ) : conversations.length === 0 && !searchTerm ? (
               <div className="empty-state" style={{ padding: 40 }}>
                 No conversations yet.<br/>Search for someone to start chatting.
               </div>
-            )}
-            {conversations.map(c => (
-              <div
-                key={c.id}
-                className={`convo-item ${selectedUserId == c.id ? 'active' : ''}`}
-                onClick={() => navigate(`/messages/${c.id}`)}
-              >
-                <div className="avatar">{initials(c)}</div>
-                <div className="convo-info">
-                  <div className="convo-name">{c.firstName} {c.lastName}</div>
-                  <div className="convo-preview">{c.lastMessage}</div>
+            ) : (
+              conversations.map(c => (
+                <div
+                  key={c.id}
+                  className={`convo-item ${selectedUserId == c.id ? 'active' : ''}`}
+                  onClick={() => navigate(`/messages/${c.id}`)}
+                >
+                  <div className="avatar">{initials(c)}</div>
+                  <div className="convo-info">
+                    <div className="convo-name">{c.firstName} {c.lastName}</div>
+                    <div className="convo-preview">{c.lastMessage}</div>
+                  </div>
+                  {c.unreadCount > 0 && <span className="convo-unread">{c.unreadCount}</span>}
                 </div>
-                {c.unreadCount > 0 && <span className="convo-unread">{c.unreadCount}</span>}
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div className="chat-area">
@@ -130,6 +138,9 @@ export default function Messages() {
                   <div className="avatar avatar-sm">{initials(selectedUser)}</div>
                   <span className="chat-header-name">{selectedUser.firstName} {selectedUser.lastName}</span>
                 </div>
+                {msgLoading ? (
+                  <ChatSkeleton />
+                ) : (
                 <div className="chat-messages">
                   {messages.map(m => (
                     <div key={m.id} className={`msg ${m.senderId === currentUser.id ? 'msg-sent' : 'msg-received'}`}>
@@ -138,6 +149,7 @@ export default function Messages() {
                   ))}
                   <div ref={messagesEnd} />
                 </div>
+                )}
                 <form className="chat-input" onSubmit={handleSend}>
                   <input placeholder="Aa" value={text} onChange={e => setText(e.target.value)} autoFocus />
                   <button className="btn btn-primary" type="submit" disabled={!text.trim()}>Send</button>

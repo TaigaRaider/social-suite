@@ -4,33 +4,40 @@ import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
+import ProfileCompletion from '../components/ProfileCompletion';
+import { GridSkeleton } from '../components/Skeleton';
 
 export default function Profile() {
   const { id } = useParams();
   const { user: currentUser, refreshUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [scheduledPosts, setScheduledPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({ firstName: '', lastName: '', bio: '' });
+  const [editStatus, setEditStatus] = useState('online');
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const isOwn = currentUser?.id === parseInt(id);
 
   const loadProfile = useCallback(async () => {
     try {
-      const [userData, postsData] = await Promise.all([
+      const results = await Promise.all([
         api.getUser(id),
         api.getUserPosts(id),
+        ...(isOwn ? [api.getScheduledPosts()] : [])
       ]);
-      setProfile(userData);
-      setPosts(postsData);
+      setProfile(results[0]);
+      setPosts(results[1]);
+      if (results[2]) setScheduledPosts(results[2]);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isOwn]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
@@ -52,12 +59,21 @@ export default function Profile() {
     setProfile((prev) => ({ ...prev, postCount: prev.postCount - 1 }));
   };
 
+  const cancelScheduled = async (pid) => {
+    if (!window.confirm('Cancel this scheduled post?')) return;
+    try {
+      await api.cancelScheduled(pid);
+      setScheduledPosts(prev => prev.filter(p => p.id !== pid));
+    } catch {}
+  };
+
   const openEdit = () => {
     setEditForm({
       firstName: profile.firstName || '',
       lastName: profile.lastName || '',
       bio: profile.bio || '',
     });
+    setEditStatus(profile.status || 'online');
     setShowEdit(true);
   };
 
@@ -66,7 +82,8 @@ export default function Profile() {
     setSaving(true);
     try {
       const updated = await api.updateMe(editForm);
-      setProfile((prev) => ({ ...prev, ...updated }));
+      api.updateStatus(editStatus).catch(() => {});
+      setProfile((prev) => ({ ...prev, ...updated, status: editStatus }));
       setShowEdit(false);
       if (refreshUser) refreshUser();
     } catch (err) {
@@ -76,12 +93,34 @@ export default function Profile() {
     }
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const data = await api.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lumina-data-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setExporting(false);
+  };
+
   if (loading) {
     return (
       <div className="page-container">
-        <div className="loading-screen" style={{ minHeight: 300 }}>
-          <div className="loader" />
+        <div className="profile-header">
+          <div className="profile-top">
+            <div className="skeleton skeleton-circle" style={{ width: 86, height: 86 }} />
+            <div className="profile-info">
+              <div className="skeleton skeleton-text" style={{ width: 120, height: 20 }} />
+              <div className="skeleton skeleton-text" style={{ width: 200, marginTop: 12 }} />
+            </div>
+          </div>
         </div>
+        <GridSkeleton />
       </div>
     );
   }
@@ -132,6 +171,25 @@ export default function Profile() {
         </div>
       </div>
 
+      {isOwn && scheduledPosts.length > 0 && (
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px 16px' }}>
+          <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              &#128197; Scheduled Posts ({scheduledPosts.length})
+            </div>
+            {scheduledPosts.map(post => (
+              <PostCard key={post.id} post={post} onDelete={(pid) => setScheduledPosts(prev => prev.filter(p => p.id !== pid))} scheduled onCancelScheduled={cancelScheduled} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isOwn && (
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px 16px' }}>
+          <ProfileCompletion profile={profile} />
+        </div>
+      )}
+
       {posts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">&#128247;</div>
@@ -172,9 +230,23 @@ export default function Profile() {
                   <label>Bio</label>
                   <textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} rows={3} />
                 </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', width: '100%' }}>
+                    <option value="online">🟢 Online</option>
+                    <option value="away">🟡 Away</option>
+                    <option value="dnd">🔴 Do Not Disturb</option>
+                    <option value="offline">⚫ Invisible</option>
+                  </select>
+                </div>
                 <button type="submit" className="btn-post" disabled={saving}>
                   {saving ? 'Saving...' : 'Save'}
                 </button>
+                <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0 12px', paddingTop: 12 }}>
+                  <button type="button" className="btn-post" onClick={handleExport} disabled={exporting} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', width: '100%' }}>
+                    {exporting ? 'Exporting...' : 'Download My Data'}
+                  </button>
+                </div>
               </form>
             </div>
           </div>

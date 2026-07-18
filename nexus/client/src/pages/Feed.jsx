@@ -4,6 +4,8 @@ import { api } from '../api';
 import Navbar from '../components/Navbar';
 import CreatePost from '../components/CreatePost';
 import PostCard from '../components/PostCard';
+import ProfileCompletion from '../components/ProfileCompletion';
+import { PostSkeleton } from '../components/Skeleton';
 
 export default function Feed() {
   const { user } = useAuth();
@@ -38,6 +40,7 @@ export default function Feed() {
                 <span style={{ color: 'var(--fb-gray)', fontSize: 14 }}>{user?.firstName} {user?.lastName}</span>
               </div>
             </div>
+            <ProfileCompletion profile={user} />
             {suggestions.length > 0 && (
               <div className="card">
                 <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 17 }}>People you may know</div>
@@ -57,7 +60,11 @@ export default function Feed() {
           <div>
             <CreatePost onPost={addPost} />
             {loading ? (
-              <div className="loading">Loading posts...</div>
+              <>
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+              </>
             ) : posts.length === 0 ? (
               <div className="card empty-state">
                 <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No posts yet</p>

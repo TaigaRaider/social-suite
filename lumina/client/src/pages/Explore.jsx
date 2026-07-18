@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import { GridSkeleton } from '../components/Skeleton';
 
 export default function Explore() {
   const [posts, setPosts] = useState([]);
@@ -68,9 +69,7 @@ export default function Explore() {
         </div>
 
         {loading ? (
-          <div className="loading-screen" style={{ minHeight: 200 }}>
-            <div className="loader" />
-          </div>
+          <GridSkeleton />
         ) : (
           <div className="explore-grid">
             {posts.length === 0 ? (

@@ -18,9 +18,11 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState([]);
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const pollRef = useRef(null);
+  const typingPollRef = useRef(null);
 
   const displayName = (conversation.otherFirstName || conversation.otherLastName)
     ? `${conversation.otherFirstName || ''} ${conversation.otherLastName || ''}`.trim()
@@ -41,6 +43,15 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
       return data;
     } catch {
       return [];
+    }
+  }, [conversation.id]);
+
+  const loadTyping = useCallback(async () => {
+    try {
+      const data = await api.getTyping(conversation.id);
+      setTypingUsers(data);
+    } catch {
+      setTypingUsers([]);
     }
   }, [conversation.id]);
 
@@ -65,9 +76,12 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
       onConversationUpdated?.();
     }, 3000);
 
+    typingPollRef.current = setInterval(loadTyping, 2000);
+
     return () => {
       mounted = false;
       clearInterval(pollRef.current);
+      clearInterval(typingPollRef.current);
     };
   }, [conversation.id]);
 
@@ -77,9 +91,12 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
 
   const handleSend = async (content) => {
     try {
-      const msg = await api.sendMessage(conversation.id, content);
-      setMessages(prev => [...prev, msg]);
+      const tempId = `temp-${Date.now()}`;
+      const optimistic = { id: tempId, content, senderId: user.id, createdAt: new Date().toISOString(), read: 0, pending: true };
+      setMessages(prev => [...prev, optimistic]);
       scrollToBottom();
+      const msg = await api.sendMessage(conversation.id, content);
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...msg, delivered: true } : m));
       onConversationUpdated?.();
     } catch {}
   };
@@ -111,7 +128,11 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
         </div>
         <div className="chat-header-info">
           <h3>{displayName}</h3>
-          <p style={{ color: isOnline ? 'var(--online-green)' : undefined }}>{statusText}</p>
+          {typingUsers.length > 0 ? (
+            <p style={{ color: 'var(--online-green)' }}>typing...</p>
+          ) : (
+            <p style={{ color: isOnline ? 'var(--online-green)' : undefined }}>{statusText}</p>
+          )}
         </div>
       </div>
 
@@ -132,10 +153,19 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
             return <MessageBubble key={msg.id} message={msg} isSent={isSent} />;
           })
         )}
+        {typingUsers.length > 0 && (
+          <div className="typing-indicator-wrapper">
+            <div className="typing-indicator">
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      <ChatInput onSend={handleSend} />
+      <ChatInput onSend={handleSend} conversationId={conversation.id} />
     </>
   );
 }

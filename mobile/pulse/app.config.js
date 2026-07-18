@@ -2,6 +2,7 @@ export default {
   expo: {
     name: "Pulse",
     slug: "pulse",
+    owner: "tatatis-team",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -29,7 +30,7 @@ export default {
     web: { favicon: "./assets/favicon.png" },
     extra: {
       apiUrl: process.env.API_URL || "http://10.0.2.2:3003/api",
-      eas: { projectId: "pulse-social-suite" }
+      eas: { projectId: "51c967aa-eb9b-496a-bcf1-4d1429daf102" }
     },
     plugins: [],
     scheme: "pulse"

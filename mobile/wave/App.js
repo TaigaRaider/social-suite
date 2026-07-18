@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SplashScreen from './src/components/SplashScreen';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
@@ -56,8 +58,15 @@ function RootNavigator() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(() => !AsyncStorage.getItem('wave_splash_seen'));
+  const handleSplashEnd = useCallback(() => {
+    AsyncStorage.setItem('wave_splash_seen', '1');
+    setShowSplash(false);
+  }, []);
+
   return (
     <AuthProvider>
+      {showSplash && <SplashScreen onAnimationEnd={handleSplashEnd} />}
       <NavigationContainer>
         <StatusBar style="light" />
         <RootNavigator />

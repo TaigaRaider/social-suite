@@ -37,11 +37,38 @@ export async function initDB() {
       userId INTEGER NOT NULL,
       content TEXT NOT NULL,
       replyToId INTEGER,
+      scheduledAt TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (userId) REFERENCES users(id),
       FOREIGN KEY (replyToId) REFERENCES posts(id)
     )
   `);
+
+  try { db.run("ALTER TABLE posts ADD COLUMN scheduledAt TEXT"); } catch(e) {}
+
+  db.run(`CREATE TABLE IF NOT EXISTS polls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    postId INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    expiresAt TEXT,
+    FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS poll_options (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pollId INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    FOREIGN KEY (pollId) REFERENCES polls(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS poll_votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    optionId INTEGER NOT NULL,
+    userId INTEGER NOT NULL,
+    UNIQUE(optionId, userId),
+    FOREIGN KEY (optionId) REFERENCES poll_options(id) ON DELETE CASCADE,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
 
   db.run(`
     CREATE TABLE IF NOT EXISTS likes (
@@ -102,6 +129,139 @@ export async function initDB() {
     )
   `);
 
+  try { db.run("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'online'"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN lastSeen DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN failedAttempts INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN lockedUntil TEXT DEFAULT NULL"); } catch(e) {}
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      targetId INTEGER NOT NULL,
+      targetType TEXT NOT NULL,
+      userId INTEGER NOT NULL,
+      emoji TEXT NOT NULL DEFAULT '👍',
+      createdAt TEXT DEFAULT (datetime('now')),
+      UNIQUE(targetId, userId, targetType),
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    action TEXT NOT NULL,
+    method TEXT NOT NULL,
+    path TEXT NOT NULL,
+    statusCode INTEGER,
+    ip TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS post_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    postId INTEGER NOT NULL,
+    userId INTEGER NOT NULL,
+    viewedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS hashtags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tag TEXT UNIQUE NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS post_hashtags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    postId INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    UNIQUE(postId, tag),
+    FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS blocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    blockerId INTEGER NOT NULL,
+    blockedId INTEGER NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(blockerId, blockedId),
+    FOREIGN KEY (blockerId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (blockedId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS mutes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    muterId INTEGER NOT NULL,
+    mutedId INTEGER NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(muterId, mutedId),
+    FOREIGN KEY (muterId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (mutedId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reporterId INTEGER NOT NULL,
+    targetType TEXT NOT NULL,
+    targetId INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reporterId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS two_factor (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL UNIQUE,
+    secret TEXT NOT NULL,
+    backupCodes TEXT NOT NULL DEFAULT '[]',
+    enabled INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expiresAt DATETIME NOT NULL,
+    used INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_posts_userId ON posts(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_posts_createdAt ON posts(createdAt)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_posts_replyToId ON posts(replyToId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_polls_postId ON polls(postId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_poll_options_pollId ON poll_options(pollId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_poll_votes_optionId ON poll_votes(optionId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_likes_postId ON likes(postId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_likes_userId ON likes(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reposts_postId ON reposts(postId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reposts_userId ON reposts(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_bookmarks_userId ON bookmarks(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_follows_followerId ON follows(followerId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_follows_followingId ON follows(followingId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_notifications_userId ON notifications(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(userId, read)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reactions_target ON reactions(targetId, targetType)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reactions_userId ON reactions(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_post_views_postId ON post_views(postId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_post_hashtags_tag ON post_hashtags(tag)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_blocks_blockerId ON blocks(blockerId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_blocks_blockedId ON blocks(blockedId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_mutes_muterId ON mutes(muterId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_mutes_mutedId ON mutes(mutedId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_userId ON audit_log(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_createdAt ON audit_log(createdAt)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_two_factor_userId ON two_factor(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)');
+
   saveDB();
   return db;
 }
@@ -110,6 +270,10 @@ export function saveDB() {
   const data = db.export();
   const buffer = Buffer.from(data);
   fs.writeFileSync(DB_PATH, buffer);
+}
+
+export function getDb() {
+  return db;
 }
 
 export function query(sql, params = []) {

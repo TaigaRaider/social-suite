@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { api } from '../api';
+import ShortcutsModal from './ShortcutsModal';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
@@ -12,6 +15,7 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [unreadMsgs, setUnreadMsgs] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const searchRef = useRef(null);
   const notifRef = useRef(null);
 
@@ -53,64 +57,98 @@ export default function Navbar() {
   const initials = user ? (user.firstName?.[0] || '') + (user.lastName?.[0] || '') || user.username[0] : '';
 
   return (
-    <nav className="navbar">
-      <div className="navbar-brand" onClick={() => navigate('/')}>nexus</div>
+    <>
+      <nav className="navbar">
+        <div className="navbar-brand" onClick={() => navigate('/')}>nexus</div>
 
-      <div className="navbar-search" ref={searchRef}>
-        <span className="search-icon">&#128269;</span>
-        <input placeholder="Search Nexus" value={search} onChange={e => setSearch(e.target.value)} />
-        {results.length > 0 && (
-          <div className="search-dropdown">
-            {results.map(u => (
-              <div key={u.id} className="search-item" onClick={() => { setSearch(''); setResults([]); navigate(`/profile/${u.id}`); }}>
-                <div className="avatar avatar-sm">{u.firstName?.[0] || u.username[0]}</div>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{u.firstName} {u.lastName || u.username}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="navbar-nav">
-        <div className="nav-icon" title="Home" onClick={() => navigate('/')}>⌂</div>
-        <div className="nav-icon" title="Messages" onClick={() => navigate('/messages')}>
-          💬
-          {unreadMsgs > 0 && <span className="nav-badge">{unreadMsgs}</span>}
-        </div>
-        <div className="nav-icon" ref={notifRef} title="Notifications" onClick={openNotifs}>
-          🔔
-          {unreadNotifs > 0 && <span className="nav-badge">{unreadNotifs}</span>}
-          {showNotifs && (
-            <div className="notif-dropdown" onClick={e => e.stopPropagation()}>
-              <div className="notif-header">Notifications</div>
-              {notifications.length === 0 && <div className="empty-state">No notifications</div>}
-              {notifications.map(n => (
-                <div key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`} onClick={() => {
-                  setShowNotifs(false);
-                  if (n.type === 'message') navigate('/messages');
-                  else if (n.type === 'friend_request') navigate('/friends');
-                  else navigate(`/profile/${n.fromUserId}`);
-                }}>
-                  <div className="avatar avatar-sm">{n.fromFirstName?.[0] || '?'}</div>
-                  <div>
-                    <div>{n.fromFirstName} {n.fromLastName} {
-                      n.type === 'like' && 'liked your post' ||
-                      n.type === 'comment' && 'commented on your post' ||
-                      n.type === 'friend_request' && 'sent you a friend request' ||
-                      n.type === 'message' && 'sent you a message'
-                    }</div>
-                  </div>
+        <div className="navbar-search" ref={searchRef}>
+          <span className="search-icon">&#128269;</span>
+          <input placeholder="Search Nexus" value={search} onChange={e => setSearch(e.target.value)} />
+          {results.length > 0 && (
+            <div className="search-dropdown">
+              {results.map(u => (
+                <div key={u.id} className="search-item" onClick={() => { setSearch(''); setResults([]); navigate(`/profile/${u.id}`); }}>
+                  <div className="avatar avatar-sm">{u.firstName?.[0] || u.username[0]}</div>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{u.firstName} {u.lastName || u.username}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
-        <div className="nav-profile" onClick={() => navigate(`/profile/${user?.id}`)}>
-          <div className="avatar avatar-sm">{initials}</div>
-          <span className="nav-profile-name">{user?.firstName || user?.username}</span>
+
+        <div className="navbar-nav">
+          <div className="nav-icon" title="Home" onClick={() => navigate('/')}>⌂</div>
+          <div className="nav-icon" title="Messages" onClick={() => navigate('/messages')}>
+            💬
+            {unreadMsgs > 0 && <span className="nav-badge">{unreadMsgs}</span>}
+          </div>
+          <div className="nav-icon" ref={notifRef} title="Notifications" onClick={openNotifs}>
+            🔔
+            {unreadNotifs > 0 && <span className="nav-badge">{unreadNotifs}</span>}
+            {showNotifs && (
+              <div className="notif-dropdown" onClick={e => e.stopPropagation()}>
+                <div className="notif-header">Notifications</div>
+                {notifications.length === 0 && <div className="empty-state">No notifications</div>}
+                {notifications.map(n => (
+                  <div key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`} onClick={() => {
+                    setShowNotifs(false);
+                    if (n.type === 'message') navigate('/messages');
+                    else if (n.type === 'friend_request') navigate('/friends');
+                    else navigate(`/profile/${n.fromUserId}`);
+                  }}>
+                    <div className="avatar avatar-sm">{n.fromFirstName?.[0] || '?'}</div>
+                    <div>
+                      <div>{n.fromFirstName} {n.fromLastName} {
+                        n.type === 'like' && 'liked your post' ||
+                        n.type === 'comment' && 'commented on your post' ||
+                        n.type === 'friend_request' && 'sent you a friend request' ||
+                        n.type === 'message' && 'sent you a message'
+                      }</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="nav-profile" onClick={() => navigate(`/profile/${user?.id}`)}>
+            <div className="avatar avatar-sm" style={{ position: 'relative' }}>
+              {initials}
+              <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--fb-white)', background: user?.status === 'online' ? '#4caf50' : user?.status === 'away' ? '#ff9800' : user?.status === 'dnd' ? '#f44336' : '#9e9e9e' }} />
+            </div>
+            <span className="nav-profile-name">{user?.firstName || user?.username}</span>
+          </div>
+          <div className="nav-icon" title="Toggle theme" onClick={toggleTheme} style={{ fontSize: 16 }}>
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </div>
+          <div className="nav-icon" title="Logout" onClick={() => { logout(); navigate('/login'); }}>⏻</div>
+          <div className="nav-icon" title="Keyboard shortcuts (?)" onClick={() => setShowShortcuts(true)} style={{ fontSize: 14, fontWeight: 700 }}>?</div>
         </div>
-        <div className="nav-icon" title="Logout" onClick={() => { logout(); navigate('/login'); }}>⏻</div>
+        {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      </nav>
+      <div className="mobile-nav">
+        <button className="mobile-nav-item" onClick={() => navigate('/')}>
+          <span>⌂</span>
+          <span>Home</span>
+        </button>
+        <button className="mobile-nav-item" onClick={() => navigate('/friends')}>
+          <span>👥</span>
+          <span>Friends</span>
+        </button>
+        <button className="mobile-nav-item" onClick={() => navigate('/messages')}>
+          <span>💬</span>
+          <span>Messages</span>
+          {unreadMsgs > 0 && <span className="nav-badge">{unreadMsgs}</span>}
+        </button>
+        <button className="mobile-nav-item" onClick={openNotifs}>
+          <span>🔔</span>
+          <span>Alerts</span>
+          {unreadNotifs > 0 && <span className="nav-badge">{unreadNotifs}</span>}
+        </button>
+        <button className="mobile-nav-item" onClick={() => navigate(`/profile/${user?.id}`)}>
+          <span>👤</span>
+          <span>Profile</span>
+        </button>
       </div>
-    </nav>
+    </>
   );
 }

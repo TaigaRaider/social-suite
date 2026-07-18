@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="pulse-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0084ff"/>
+      <stop offset="100%" stop-color="#00c6ff"/>
+    </linearGradient>
+    <filter id="pulse-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#pulse-bg)"/>
+  <g filter="url(#pulse-shadow)">
+    <!-- Lightning bolt / pulse shape -->
+    <path d="M72 24L44 68h20L52 104l36-48H68L80 24H72z" fill="white" opacity="0.95"/>
+  </g>
+</svg>

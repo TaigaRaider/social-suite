@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import PostCard from '../components/PostCard';
 import CreatePost from '../components/CreatePost';
+import ProfileCompletion from '../components/ProfileCompletion';
+import { PostSkeleton } from '../components/Skeleton';
 
 export default function Feed() {
   const { user } = useAuth();
@@ -47,8 +49,15 @@ export default function Feed() {
         <button className={`tab ${tab === 'trending' ? 'active' : ''}`} onClick={() => setTab('trending')}>For You</button>
       </div>
       <CreatePost ref={composerRef} onCreated={handlePostCreated} placeholder="What's happening?" />
+      {user && <ProfileCompletion profile={user} />}
       {loading ? (
-        <div className="loading" style={{ height: '200px' }}>Loading...</div>
+        <div>
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </div>
       ) : posts.length === 0 ? (
         <div className="empty-state">
           <h3>No posts yet</h3>

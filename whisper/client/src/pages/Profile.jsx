@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import PostCard from '../components/PostCard';
+import ProfileCompletion from '../components/ProfileCompletion';
 
 export default function Profile() {
   const { id } = useParams();
@@ -10,10 +11,12 @@ export default function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [scheduledPosts, setScheduledPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({ firstName: '', lastName: '', bio: '' });
   const [tab, setTab] = useState('posts');
+  const [exporting, setExporting] = useState(false);
 
   const isOwn = currentUser && parseInt(id) === currentUser.id;
 
@@ -21,7 +24,8 @@ export default function Profile() {
     setLoading(true);
     Promise.all([
       api.getUser(id).then(p => { setProfile(p); setEditForm({ firstName: p.firstName, lastName: p.lastName, bio: p.bio }); }),
-      api.getUserPosts(id).then(setPosts)
+      api.getUserPosts(id).then(setPosts),
+      ...(isOwn ? [api.getScheduledPosts().then(setScheduledPosts)] : [])
     ]).catch(() => navigate('/')).finally(() => setLoading(false));
   }, [id]);
 
@@ -51,6 +55,29 @@ export default function Profile() {
 
   const handleDelete = (postId) => {
     setPosts(prev => prev.filter(p => p.id !== postId));
+  };
+
+  const cancelScheduled = async (pid) => {
+    if (!confirm('Cancel this scheduled post?')) return;
+    try {
+      await api.cancelScheduled(pid);
+      setScheduledPosts(prev => prev.filter(p => p.id !== pid));
+    } catch {}
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const data = await api.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'whisper-data-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setExporting(false);
   };
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -96,6 +123,21 @@ export default function Profile() {
         </div>
       </div>
 
+      {isOwn && scheduledPosts.length > 0 && (
+        <div style={{ padding: '0 16px 16px' }}>
+          <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              &#128197; Scheduled Posts ({scheduledPosts.length})
+            </div>
+            {scheduledPosts.map(post => (
+              <PostCard key={post.id} post={post} onDelete={(pid) => setScheduledPosts(prev => prev.filter(p => p.id !== pid))} scheduled onCancelScheduled={cancelScheduled} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isOwn && <div style={{ padding: '0 16px 16px' }}><ProfileCompletion profile={profile} /></div>}
+
       <div className="tabs">
         <button className={`tab ${tab === 'posts' ? 'active' : ''}`} onClick={() => setTab('posts')}>Posts</button>
       </div>
@@ -130,6 +172,11 @@ export default function Profile() {
               <textarea value={editForm.bio} onChange={e => setEditForm(p => ({ ...p, bio: e.target.value }))} maxLength={160} />
             </div>
             <button className="btn-primary" onClick={handleSaveProfile}>Save</button>
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0 12px', paddingTop: 12 }}>
+              <button className="btn-primary" onClick={handleExport} disabled={exporting} style={{ width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                {exporting ? 'Exporting...' : 'Download My Data'}
+              </button>
+            </div>
           </div>
         </div>
       )}

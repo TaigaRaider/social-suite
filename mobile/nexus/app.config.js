@@ -2,6 +2,7 @@ export default {
   expo: {
     name: "Facebook",
     slug: "facebook",
+    owner: "tatatis-team",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -32,7 +33,7 @@ export default {
     extra: {
       apiUrl: process.env.API_URL || "http://10.0.2.2:3001/api",
       eas: {
-        projectId: "facebook-social-suite"
+        projectId: "48736074-ca8b-4e74-9e76-4b75c32e9b36"
       }
     },
     plugins: [],

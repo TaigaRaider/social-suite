@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="lumina-bg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#833ab4"/>
+      <stop offset="50%" stop-color="#c13584"/>
+      <stop offset="100%" stop-color="#fd1d1d"/>
+    </linearGradient>
+    <linearGradient id="lumina-inner" x1="30%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fdf497"/>
+      <stop offset="25%" stop-color="#fd5949"/>
+      <stop offset="50%" stop-color="#d6249f"/>
+      <stop offset="75%" stop-color="#285AEB"/>
+      <stop offset="100%" stop-color="#833ab4"/>
+    </linearGradient>
+    <filter id="lumina-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="32" fill="url(#lumina-bg)"/>
+  <g filter="url(#lumina-shadow)">
+    <!-- Camera body -->
+    <rect x="28" y="36" width="72" height="56" rx="14" fill="none" stroke="white" stroke-width="5"/>
+    <!-- Lens -->
+    <circle cx="64" cy="64" r="16" fill="none" stroke="white" stroke-width="4"/>
+    <!-- Inner ring -->
+    <circle cx="64" cy="64" r="6" fill="white" opacity="0.9"/>
+    <!-- Flash dot -->
+    <circle cx="86" cy="46" r="4" fill="white" opacity="0.9"/>
+  </g>
+</svg>

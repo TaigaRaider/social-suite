@@ -1,13 +1,33 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { api } from '../api';
 
-export default function ChatInput({ onSend }) {
+export default function ChatInput({ onSend, conversationId }) {
   const [text, setText] = useState('');
+  const typingTimerRef = useRef(null);
+
+  const emitTyping = useCallback(() => {
+    if (!conversationId) return;
+    if (typingTimerRef.current) return;
+    api.emitTyping(conversationId).catch(() => {});
+    typingTimerRef.current = setTimeout(() => {
+      typingTimerRef.current = null;
+    }, 2000);
+  }, [conversationId]);
+
+  const handleChange = (e) => {
+    setText(e.target.value);
+    emitTyping();
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
     onSend(text.trim());
     setText('');
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
   };
 
   return (
@@ -17,7 +37,7 @@ export default function ChatInput({ onSend }) {
           type="text"
           placeholder="Type a message..."
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={handleChange}
           autoFocus
         />
         <button type="submit" className="send-btn" disabled={!text.trim()}>

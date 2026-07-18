@@ -2,13 +2,31 @@ const API = '/api';
 
 function headers() {
   const token = localStorage.getItem('token');
-  return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  return { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
 async function request(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, { headers: headers(), ...opts });
+  const h = headers();
+  if (!(opts.body instanceof FormData)) {
+    h['Content-Type'] = 'application/json';
+  }
+  const res = await fetch(`${API}${path}`, { headers: h, ...opts });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function uploadImage(file) {
+  const form = new FormData();
+  form.append('image', file);
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API}/posts/upload`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
   return data;
 }
 
@@ -27,6 +45,11 @@ export const api = {
   likePost: (id) => request(`/posts/${id}/like`, { method: 'POST' }),
   getComments: (id) => request(`/posts/${id}/comments`),
   addComment: (id, body) => request(`/posts/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
+  uploadImage,
+  getScheduledPosts: () => request('/posts/scheduled'),
+  cancelScheduled: (id) => request(`/posts/scheduled/${id}`, { method: 'DELETE' }),
+  getPoll: (postId) => request(`/posts/${postId}/poll`),
+  votePoll: (postId, optionId) => request(`/posts/${postId}/poll/vote`, { method: 'POST', body: JSON.stringify({ optionId }) }),
 
   getFriends: () => request('/friends'),
   getFriendRequests: () => request('/friends/requests'),
@@ -44,4 +67,10 @@ export const api = {
   getNotifications: () => request('/notifications'),
   markNotificationsRead: () => request('/notifications/read', { method: 'PUT' }),
   getUnreadNotifications: () => request('/notifications/unread/count'),
+
+  toggleReaction: (targetId, targetType, emoji) => request('/reactions', { method: 'POST', body: JSON.stringify({ targetId, targetType, emoji }) }),
+  getReactions: (targetId, targetType) => request(`/reactions/${targetId}/${targetType}`),
+
+  exportData: () => request('/export'),
+  updateStatus: (status) => request('/auth/status', { method: 'PUT', body: JSON.stringify({ status }) }),
 };

@@ -2,6 +2,7 @@ export default {
   expo: {
     name: "Wave",
     slug: "wave",
+    owner: "tatatis-team",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -29,7 +30,7 @@ export default {
     web: { favicon: "./assets/favicon.png" },
     extra: {
       apiUrl: process.env.API_URL || "http://10.0.2.2:3004/api",
-      eas: { projectId: "wave-social-suite" }
+      eas: { projectId: "835f4999-942f-4752-aebc-bf33de1a721d" }
     },
     plugins: [],
     scheme: "wave"

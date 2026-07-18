@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import PostCard from '../components/PostCard';
 import CreatePost from '../components/CreatePost';
+import { ThreadSkeleton } from '../components/Skeleton';
 
 export default function Thread() {
   const { id } = useParams();
@@ -42,7 +43,7 @@ export default function Thread() {
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <ThreadSkeleton />;
   if (!thread) return null;
 
   return (

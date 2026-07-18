@@ -6,6 +6,8 @@ import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import StoriesBar from '../components/StoriesBar';
 import CreatePost from '../components/CreatePost';
+import ProfileCompletion from '../components/ProfileCompletion';
+import { PostSkeleton, StorySkeleton } from '../components/Skeleton';
 
 export default function Feed() {
   const [posts, setPosts] = useState([]);
@@ -38,21 +40,29 @@ export default function Feed() {
   return (
     <div className="page-container">
       <div className="feed-page">
-        <StoriesBar />
         {loading ? (
-          <div className="loading-screen" style={{ minHeight: 200 }}>
-            <div className="loader" />
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">&#128247;</div>
-            <h3>No posts yet</h3>
-            <p>Follow people or create a post to get started!</p>
-          </div>
+          <>
+            <div className="stories-bar">
+              {Array.from({ length: 5 }).map((_, i) => <StorySkeleton key={i} />)}
+            </div>
+            {Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={i} />)}
+          </>
         ) : (
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} onDelete={handlePostDeleted} />
-          ))
+          <>
+            <StoriesBar />
+            <ProfileCompletion profile={user} />
+            {posts.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">&#128247;</div>
+                <h3>No posts yet</h3>
+                <p>Follow people or create a post to get started!</p>
+              </div>
+            ) : (
+              posts.map((post) => (
+                <PostCard key={post.id} post={post} onDelete={handlePostDeleted} />
+              ))
+            )}
+          </>
         )}
       </div>
       <Navbar onCreateClick={() => setShowCreate(true)} />

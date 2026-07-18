@@ -1,16 +1,28 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { body, validationResult } from 'express-validator';
 import { query, queryOne, run } from '../db.js';
 import { generateToken, auth } from '../auth.js';
 
 const router = Router();
 
-router.post('/register', async (req, res) => {
+const validate = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ error: errors.array()[0].msg });
+    return false;
+  }
+  return true;
+};
+
+router.post('/register', [
+  body('username').trim().isLength({ min: 3, max: 30 }).withMessage('Username must be 3-30 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
   try {
+    if (!validate(req, res)) return;
     const { username, email, password, firstName, lastName } = req.body;
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Username, email, and password are required' });
-    }
 
     const existing = queryOne('SELECT id FROM users WHERE username = ? OR email = ?', [username, email]);
     if (existing) {
@@ -31,22 +43,38 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', [
+  body('login').trim().notEmpty().withMessage('Login is required'),
+  body('password').notEmpty().withMessage('Password is required')
+], async (req, res) => {
   try {
+    if (!validate(req, res)) return;
     const { login, password } = req.body;
-    if (!login || !password) {
-      return res.status(400).json({ error: 'Login and password are required' });
-    }
 
     const user = queryOne('SELECT * FROM users WHERE username = ? OR email = ?', [login, login]);
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
+    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+      const remainingMs = new Date(user.lockedUntil) - new Date();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      return res.status(423).json({ error: `Account locked. Try again in ${remainingMin} minute(s).` });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
+      const attempts = (user.failedAttempts || 0) + 1;
+      if (attempts >= 5) {
+        const lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+        run('UPDATE users SET failedAttempts = ?, lockedUntil = ? WHERE id = ?', [attempts, lockUntil, user.id]);
+        return res.status(423).json({ error: 'Account locked due to too many failed attempts. Try again in 15 minutes.' });
+      }
+      run('UPDATE users SET failedAttempts = ? WHERE id = ?', [attempts, user.id]);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    run('UPDATE users SET failedAttempts = 0, lockedUntil = NULL WHERE id = ?', [user.id]);
 
     const { password: _, ...safeUser } = user;
     const token = generateToken(safeUser);
@@ -105,10 +133,18 @@ router.get('/search', auth, (req, res) => {
   if (!q) return res.json([]);
 
   const users = query(
-    "SELECT id, username, firstName, lastName, avatar FROM users WHERE username LIKE ? OR firstName LIKE ? OR lastName LIKE ? LIMIT 20",
+    "SELECT id, username, firstName, lastName, avatar, status FROM users WHERE username LIKE ? OR firstName LIKE ? OR lastName LIKE ? LIMIT 20",
     [`%${q}%`, `%${q}%`, `%${q}%`]
   );
   res.json(users);
+});
+
+router.put('/status', auth, (req, res) => {
+  const { status } = req.body;
+  const validStatuses = ['online', 'away', 'offline', 'dnd'];
+  const s = validStatuses.includes(status) ? status : 'offline';
+  run('UPDATE users SET status = ?, lastSeen = CURRENT_TIMESTAMP WHERE id = ?', [s, req.userId]);
+  res.json({ ok: true });
 });
 
 export default router;
