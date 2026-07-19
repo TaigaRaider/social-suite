@@ -44,14 +44,25 @@ router.post('/group/:groupId', auth, (req, res) => {
     const membership = queryOne('SELECT * FROM group_members WHERE groupId = ? AND userId = ?', [req.params.groupId, req.user.id]);
     if (!membership) return res.status(403).json({ error: 'Not a member' });
 
-    const { content, replyToId } = req.body;
-    if (!content || content.trim() === '') {
+    const { content, ciphertext, nonce, ratchetHeader, replyToId } = req.body;
+    const isEncrypted = ciphertext && nonce && ratchetHeader;
+    if (!isEncrypted && (!content || content.trim() === '')) {
       return res.status(400).json({ error: 'Message content is required' });
     }
 
     const result = run(
-      'INSERT INTO messages (groupId, senderId, content, replyToId) VALUES (?, ?, ?, ?)',
-      [req.params.groupId, req.user.id, content.trim(), replyToId || null]
+      `INSERT INTO messages (groupId, senderId, content, encrypted, ciphertext, nonce, ratchetHeader, replyToId)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        req.params.groupId,
+        req.user.id,
+        isEncrypted ? '[encrypted]' : content.trim(),
+        isEncrypted ? 1 : 0,
+        ciphertext || null,
+        nonce || null,
+        ratchetHeader ? JSON.stringify(ratchetHeader) : null,
+        replyToId || null
+      ]
     );
 
     const message = queryOne(`

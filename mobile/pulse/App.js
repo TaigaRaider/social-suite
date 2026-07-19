@@ -15,6 +15,7 @@ import FriendsScreen from './src/screens/FriendsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
+import DeviceManagerScreen from './src/screens/DeviceManagerScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -100,6 +101,11 @@ function AppNavigator() {
               headerTintColor: '#ffffff',
               headerTitleStyle: { fontWeight: '600' },
             }}
+          />
+          <RootStack.Screen
+            name="DeviceManager"
+            component={DeviceManagerScreen}
+            options={{ headerShown: false }}
           />
         </RootStack.Group>
       )}

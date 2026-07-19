@@ -1,8 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
+import pinoHttp from 'pino-http';
+import logger from './logger.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { initDB, getDb } from './db.js';
+import { startScheduler } from './scheduler.js';
 import helmet from 'helmet';
 import { rateLimit, sanitizeInput, cleanupOldEntries, auditLog } from './middleware/security.js';
 import authRoutes from './routes/auth.js';
@@ -18,15 +22,20 @@ import searchRoutes from './routes/search.js';
 import moderationRoutes from './routes/moderation.js';
 import twofaRoutes from './routes/twofa.js';
 import passwordResetRoutes from './routes/password-reset.js';
+import accountRoutes from './routes/account.js';
+import adminRoutes from './routes/admin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function start() {
   await initDB();
+  startScheduler();
 
   const app = express();
   const PORT = process.env.PORT || 3001;
 
+  app.use(compression());
+  app.use(pinoHttp({ logger }));
   app.use(helmet());
   app.use(cors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -34,7 +43,7 @@ async function start() {
   }));
   app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
   app.use(sanitizeInput());
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
   app.use('/uploads', express.static(join(__dirname, 'uploads')));
   app.use(auditLog(getDb()));
 
@@ -55,13 +64,35 @@ async function start() {
   app.use('/api/moderation', moderationRoutes);
   app.use('/api/2fa', twofaRoutes);
   app.use('/api/auth', passwordResetRoutes);
+  app.use('/api/account', accountRoutes);
+  app.use('/api/admin', adminRoutes);
 
-  app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+  app.get('/api/health', (req, res) => {
+    try {
+      const db = getDb();
+      db.exec('SELECT 1');
+      res.json({ status: 'ok', db: 'connected', uptime: process.uptime() });
+    } catch (err) {
+      res.status(503).json({ status: 'error', db: 'disconnected', error: err.message });
+    }
+  });
+
+  app.use((err, req, res, _next) => {
+    logger.error({ err, method: req.method, path: req.path }, 'Request error');
+    res.status(err.status || 500).json({ error: 'Internal server error' });
+  });
+
+  process.on('uncaughtException', (err) => {
+    logger.fatal({ err }, 'Uncaught exception');
+  });
+  process.on('unhandledRejection', (reason) => {
+    logger.fatal({ err: reason }, 'Unhandled rejection');
+  });
 
   cleanupOldEntries();
 
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    logger.info({ port: PORT }, 'Nexus server started');
   });
 }
 

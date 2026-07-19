@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
+import pinoHttp from 'pino-http';
+import logger from './logger.js';
 import helmet from 'helmet';
 import { initDB, getDb } from './db.js';
+import { startScheduler } from './scheduler.js';
 import { rateLimit, auditLog, sanitizeInput, cleanupOldEntries } from './middleware/security.js';
 import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
@@ -15,10 +19,14 @@ import searchRoutes from './routes/search.js';
 import moderationRoutes from './routes/moderation.js';
 import twofaRoutes from './routes/twofa.js';
 import passwordResetRoutes from './routes/password-reset.js';
+import accountRoutes from './routes/account.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 const PORT = 3005;
 
+app.use(compression());
+app.use(pinoHttp({ logger }));
 app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -26,7 +34,7 @@ app.use(cors({
 }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 app.use(sanitizeInput());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(auditLog(getDb()));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many auth attempts' });
@@ -45,16 +53,39 @@ app.use('/api/search', searchRoutes);
 app.use('/api/moderation', moderationRoutes);
 app.use('/api/2fa', twofaRoutes);
 app.use('/api/auth', passwordResetRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/admin', adminRoutes);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (req, res) => {
+  try {
+    const db = getDb();
+    db.exec('SELECT 1');
+    res.json({ status: 'ok', db: 'connected', uptime: process.uptime() });
+  } catch (err) {
+    res.status(503).json({ status: 'error', db: 'disconnected', error: err.message });
+  }
+});
+
+app.use((err, req, res, _next) => {
+  logger.error({ err, method: req.method, path: req.path }, 'Request error');
+  res.status(err.status || 500).json({ error: 'Internal server error' });
+});
+
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception');
+});
+process.on('unhandledRejection', (reason) => {
+  logger.fatal({ err: reason }, 'Unhandled rejection');
+});
 
 cleanupOldEntries();
 
 initDB().then(() => {
+  startScheduler();
   app.listen(PORT, () => {
-    console.log(`Whisper server running on port ${PORT}`);
+    logger.info({ port: PORT }, 'Whisper server started');
   });
 }).catch(err => {
-  console.error('Failed to initialize database:', err);
+  logger.error({ err }, 'Failed to initialize database');
   process.exit(1);
 });

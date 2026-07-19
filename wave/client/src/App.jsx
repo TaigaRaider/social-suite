@@ -9,6 +9,8 @@ import Signup from './pages/Signup';
 import Home from './pages/Home';
 import NewGroup from './pages/NewGroup';
 import Onboarding from './components/Onboarding';
+import DeviceManager from './components/DeviceManager';
+import { api } from './api';
 import Splash from './components/Splash';
 
 function ProtectedRoute({ children }) {
@@ -42,6 +44,7 @@ function AppContent() {
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/group/:groupId" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/new-group" element={<ProtectedRoute><NewGroup /></ProtectedRoute>} />
+          <Route path="/devices" element={<ProtectedRoute><DeviceManager api={api} /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </>

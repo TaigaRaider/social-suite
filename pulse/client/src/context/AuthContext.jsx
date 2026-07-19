@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../api';
+import { init as initCrypto, getLocalIdentity, generateLocalIdentity, uploadKeyBundle } from '../crypto/signalProtocol.js';
+import { generateOneTimePreKeys } from '../crypto/keyGeneration.js';
 
 const AuthContext = createContext(null);
 
@@ -25,6 +27,23 @@ export function AuthProvider({ children }) {
     const { token, user } = await api.login(email, password);
     localStorage.setItem('pulse_token', token);
     setUser(user);
+    try {
+      initCrypto('http://localhost:3003/api');
+      if (!getLocalIdentity()) {
+        generateLocalIdentity();
+        uploadKeyBundle(token);
+      }
+      const checkPreKeys = async () => {
+        try {
+          const bundle = await api.crypto.getPeerBundle(user.id);
+          if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
+            const newKeys = generateOneTimePreKeys(50);
+            await api.crypto.replenishPreKeys(newKeys);
+          }
+        } catch (e) { /* ignore */ }
+      };
+      checkPreKeys();
+    } catch {}
     return user;
   };
 
@@ -32,6 +51,23 @@ export function AuthProvider({ children }) {
     const { token, user } = await api.register(data);
     localStorage.setItem('pulse_token', token);
     setUser(user);
+    try {
+      initCrypto('http://localhost:3003/api');
+      if (!getLocalIdentity()) {
+        generateLocalIdentity();
+        uploadKeyBundle(token);
+      }
+      const checkPreKeys = async () => {
+        try {
+          const bundle = await api.crypto.getPeerBundle(user.id);
+          if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
+            const newKeys = generateOneTimePreKeys(50);
+            await api.crypto.replenishPreKeys(newKeys);
+          }
+        } catch (e) { /* ignore */ }
+      };
+      checkPreKeys();
+    } catch {}
     return user;
   };
 

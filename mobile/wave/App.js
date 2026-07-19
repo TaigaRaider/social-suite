@@ -13,6 +13,7 @@ import GroupsScreen from './src/screens/GroupsScreen';
 import GroupChatScreen from './src/screens/GroupChatScreen';
 import NewGroupScreen from './src/screens/NewGroupScreen';
 import MembersScreen from './src/screens/MembersScreen';
+import DeviceManagerScreen from './src/screens/DeviceManagerScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +40,7 @@ function MainStack() {
       <Stack.Screen name="GroupChat" component={GroupChatScreen} />
       <Stack.Screen name="NewGroup" component={NewGroupScreen} options={{ title: 'New Group' }} />
       <Stack.Screen name="Members" component={MembersScreen} />
+      <Stack.Screen name="DeviceManager" component={DeviceManagerScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

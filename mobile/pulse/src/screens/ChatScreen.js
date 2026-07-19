@@ -10,9 +10,11 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import MessageBubble from '../components/MessageBubble';
+import { loadIdentity, generateLocalIdentity, uploadKeyBundle, sendMessage as sendEncrypted, isE2EEEnabled } from '../crypto/signalProtocol';
 
 function formatDateLabel(dateStr) {
   const d = new Date(dateStr);
@@ -79,6 +81,18 @@ export default function ChatScreen({ route }) {
     }
   }, [messages, shouldAutoScroll]);
 
+  useEffect(() => {
+    const initCrypto = async () => {
+      const identity = await loadIdentity();
+      if (!identity) {
+        const token = await AsyncStorage.getItem('token');
+        await generateLocalIdentity();
+        if (token) await uploadKeyBundle(token);
+      }
+    };
+    initCrypto();
+  }, []);
+
   async function handleSend() {
     const content = text.trim();
     if (!content) return;
@@ -86,7 +100,12 @@ export default function ChatScreen({ route }) {
     setShouldAutoScroll(true);
 
     try {
-      await api.sendMessage(conversationId, content);
+      if (isE2EEEnabled()) {
+        const token = await AsyncStorage.getItem('token');
+        await sendEncrypted(conversationId, content, token);
+      } else {
+        await api.sendMessage(conversationId, content);
+      }
       await fetchMessages();
     } catch (err) {
       setText(content);

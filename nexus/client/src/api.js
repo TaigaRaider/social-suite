@@ -71,6 +71,18 @@ export const api = {
   toggleReaction: (targetId, targetType, emoji) => request('/reactions', { method: 'POST', body: JSON.stringify({ targetId, targetType, emoji }) }),
   getReactions: (targetId, targetType) => request(`/reactions/${targetId}/${targetType}`),
 
+  getAnalyticsInsights: () => request('/analytics/insights'),
+  getAnalyticsTrends: () => request('/analytics/trends'),
+  getAnalyticsTopPosts: () => request('/analytics/top-posts'),
+
   exportData: () => request('/export'),
   updateStatus: (status) => request('/auth/status', { method: 'PUT', body: JSON.stringify({ status }) }),
+
+  adminStats: () => request('/admin/stats'),
+  adminReports: (status) => request(`/admin/reports${status ? `?status=${status}` : ''}`),
+  adminUpdateReport: (id, status) => request(`/admin/reports/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  adminUsers: (page = 1, limit = 20) => request(`/admin/users?page=${page}&limit=${limit}`),
+  adminBanUser: (id) => request(`/admin/users/${id}/ban`, { method: 'PUT' }),
+  adminDeletePost: (id) => request(`/admin/posts/${id}`, { method: 'DELETE' }),
+  adminAllPosts: (page = 1, limit = 20) => request(`/posts?page=${page}&limit=${limit}`),
 };

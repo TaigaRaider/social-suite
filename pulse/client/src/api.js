@@ -42,4 +42,20 @@ export const api = {
   getReactions: (targetId, targetType) => request(`/reactions/${targetId}/${targetType}`),
 
   exportData: () => request('/export'),
+
+  // E2EE methods
+  crypto: {
+    uploadKeyBundle: (bundle) => request('/crypto/identity-key', { method: 'POST', body: JSON.stringify(bundle) }),
+    getPeerBundle: (userId) => request(`/crypto/identity-key/${userId}`),
+    rotateSignedPreKey: (data) => request('/crypto/identity-key/rotate-signed-prekey', { method: 'POST', body: JSON.stringify(data) }),
+    replenishPreKeys: (keys) => request('/crypto/identity-key/replenish-prekeys', { method: 'POST', body: JSON.stringify({ oneTimePreKeys: keys }) }),
+    sendPreKeyBundle: (data) => request('/crypto/session/prekey-bundle', { method: 'POST', body: JSON.stringify(data) }),
+    getPreKeyBundles: () => request('/crypto/session/prekey-bundles'),
+    acknowledgePreKey: (id) => request(`/crypto/session/prekey-bundles/${id}`, { method: 'DELETE' }),
+    relayMessage: (data) => request('/crypto/message/relay', { method: 'POST', body: JSON.stringify(data) }),
+    getSafetyNumber: (peerId) => request(`/crypto/safety-number/${peerId}`),
+    verifySafetyNumber: (peerId) => request(`/crypto/safety-number/${peerId}/verify`, { method: 'POST' }),
+    getSafetyNumberStatus: (peerId) => request(`/crypto/safety-number/${peerId}/status`),
+    removeSafetyNumber: (peerId) => request(`/crypto/safety-number/${peerId}`, { method: 'DELETE' }),
+  },
 };

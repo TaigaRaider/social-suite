@@ -66,6 +66,9 @@ export default function Navbar({ user, onLogout, unreadCount = 0 }) {
         <button className="header-btn" onClick={handleExport} disabled={exporting} title="Download My Data" style={{ fontSize: 12 }}>
           {exporting ? '...' : '↓'}
         </button>
+        <button className="header-btn" onClick={() => navigate('/devices')} title="Linked Devices" style={{ fontSize: 14 }}>
+          🔐
+        </button>
         <button className="header-btn" onClick={() => setShowShortcuts(true)} title="Keyboard shortcuts" style={{ fontSize: 14, fontWeight: 700 }}>?</button>
       </div>
       {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}

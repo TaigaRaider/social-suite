@@ -23,7 +23,7 @@ export default function SplashScreen({ onAnimationEnd }) {
   return (
     <Animated.View style={[styles.container, { opacity }]}>
       <Animated.View style={[styles.content, { transform: [{ scale }] }]}>
-        <Image source={require('../assets/splash-icon.png')} style={styles.logo} />
+        <Image source={require('../../assets/splash-icon.png')} style={styles.logo} />
         <Text style={styles.title}>Wave</Text>
         <Text style={styles.tagline}>RIDE THE SIGNAL</Text>
         <View style={styles.dots}>

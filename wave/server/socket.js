@@ -35,6 +35,10 @@ export function setupWebSocket(server) {
     run('UPDATE users SET status = ?, lastSeen = CURRENT_TIMESTAMP WHERE id = ?', ['online', userId]);
     io.emit('user:online', { userId, status: 'online' });
 
+    socket.on('device:identify', ({ userId, deviceId }) => {
+      socket.join(`user_${userId}_device_${deviceId}`);
+    });
+
     socket.on('group:join', (groupId) => {
       const member = queryOne('SELECT id FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
       if (member) {
@@ -47,15 +51,28 @@ export function setupWebSocket(server) {
     });
 
     socket.on('message:send', (data) => {
-      const { groupId, content, replyToId } = data;
-      if (!groupId || !content?.trim()) return;
+      const { groupId, content, ciphertext, nonce, ratchetHeader, replyToId, deviceId } = data;
 
       const membership = queryOne('SELECT id FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
       if (!membership) return;
 
+      const isEncrypted = ciphertext && nonce && ratchetHeader;
+      if (!isEncrypted && (!content || !content.trim())) return;
+
       const result = run(
-        'INSERT INTO messages (groupId, senderId, content, replyToId) VALUES (?, ?, ?, ?)',
-        [groupId, userId, content.trim(), replyToId || null]
+        `INSERT INTO messages (groupId, senderId, content, encrypted, ciphertext, nonce, ratchetHeader, replyToId, deviceId)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          groupId,
+          userId,
+          isEncrypted ? '[encrypted]' : content.trim(),
+          isEncrypted ? 1 : 0,
+          ciphertext || null,
+          nonce || null,
+          ratchetHeader ? JSON.stringify(ratchetHeader) : null,
+          replyToId || null,
+          deviceId || null
+        ]
       );
 
       const message = queryOne(`
@@ -63,7 +80,58 @@ export function setupWebSocket(server) {
         FROM messages m JOIN users u ON m.senderId = u.id WHERE m.id = ?
       `, [result.lastId]);
 
-      io.to(`group:${groupId}`).emit('message:new', { groupId, message });
+      io.to(`group:${groupId}`).emit('message:new', {
+        groupId,
+        message: {
+          id: message.id,
+          senderId: message.senderId,
+          senderName: message.senderName,
+          senderFirstName: message.senderFirstName,
+          senderLastName: message.senderLastName,
+          senderAvatar: message.senderAvatar,
+          content: isEncrypted ? undefined : message.content,
+          encrypted: isEncrypted ? 1 : 0,
+          ciphertext: message.ciphertext,
+          nonce: message.nonce,
+          ratchetHeader: message.ratchetHeader ? JSON.parse(message.ratchetHeader) : undefined,
+          replyToId: message.replyToId,
+          deviceId: message.deviceId,
+          createdAt: message.createdAt
+        }
+      });
+
+      // Multi-device: send to all group member devices except sender's device
+      if (deviceId) {
+        const members = query('SELECT userId FROM group_members WHERE groupId = ? AND userId != ?', [groupId, userId]);
+        for (const member of members) {
+          const memberDevices = query('SELECT deviceId FROM device_keys WHERE userId = ?', [member.userId]);
+          memberDevices.forEach(device => {
+            if (device.deviceId !== deviceId) {
+              io.to(`user_${member.userId}_device_${device.deviceId}`).emit('message:new', {
+                groupId,
+                targetDeviceId: device.deviceId,
+                fromDeviceId: deviceId,
+                message: {
+                  id: message.id,
+                  senderId: message.senderId,
+                  senderName: message.senderName,
+                  senderFirstName: message.senderFirstName,
+                  senderLastName: message.senderLastName,
+                  senderAvatar: message.senderAvatar,
+                  content: isEncrypted ? undefined : message.content,
+                  encrypted: isEncrypted ? 1 : 0,
+                  ciphertext: message.ciphertext,
+                  nonce: message.nonce,
+                  ratchetHeader: message.ratchetHeader ? JSON.parse(message.ratchetHeader) : undefined,
+                  replyToId: message.replyToId,
+                  deviceId: message.deviceId,
+                  createdAt: message.createdAt
+                }
+              });
+            }
+          });
+        }
+      }
 
       const members = query('SELECT userId FROM group_members WHERE groupId = ? AND userId != ?', [groupId, userId]);
       const sender = queryOne('SELECT username, firstName, lastName, avatar FROM users WHERE id = ?', [userId]);
@@ -77,6 +145,28 @@ export function setupWebSocket(server) {
             messageId: result.lastId
           });
         }
+      }
+    });
+
+    socket.on('prekey:deliver', (data) => {
+      const { recipientId, ephemeralPublic, identityPublic, ciphertext, nonce, mac, usedOneTimeKeyId } = data;
+
+      run(
+        `INSERT INTO prekey_messages (recipientId, senderId, ephemeralPublic, identityPublic, usedOneTimeKeyId, ciphertext, nonce, mac)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [recipientId, userId, ephemeralPublic, identityPublic, usedOneTimeKeyId || null, ciphertext, nonce, mac]
+      );
+
+      if (usedOneTimeKeyId) {
+        run(
+          'UPDATE one_time_pre_keys SET claimed = 1, claimedBy = ?, claimedAt = ? WHERE userId = ? AND keyId = ?',
+          [userId, new Date().toISOString(), recipientId, usedOneTimeKeyId]
+        );
+      }
+
+      const recipientSocket = onlineUsers.get(recipientId);
+      if (recipientSocket) {
+        io.to(recipientSocket).emit('prekey:message', { senderId: userId });
       }
     });
 
@@ -102,6 +192,9 @@ export function setupWebSocket(server) {
       const membership = queryOne('SELECT id FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
       if (!membership) return;
 
+      run(`INSERT OR REPLACE INTO typing_indicators (userId, groupId, isTyping, lastUpdated)
+        VALUES (?, ?, 1, datetime('now'))`, [userId, groupId]);
+
       socket.to(`group:${groupId}`).emit('typing:update', {
         groupId,
         userId,
@@ -111,12 +204,62 @@ export function setupWebSocket(server) {
     });
 
     socket.on('typing:stop', (groupId) => {
+      run('UPDATE typing_indicators SET isTyping = 0 WHERE userId = ? AND groupId = ?', [userId, groupId]);
+
       socket.to(`group:${groupId}`).emit('typing:update', {
         groupId,
         userId,
         username: socket.username,
         isTyping: false
       });
+    });
+
+    socket.on('heartbeat', () => {
+      if (!userId) return;
+      run(`INSERT OR REPLACE INTO online_status (userId, isOnline, lastSeenAt)
+        VALUES (?, 1, datetime('now'))`, [userId]);
+    });
+
+    socket.on('reaction:add', ({ messageId, emoji, groupId }) => {
+      if (!messageId || !emoji) return;
+      try {
+        run(`INSERT OR IGNORE INTO message_reactions (messageId, userId, emoji, createdAt)
+          VALUES (?, ?, ?, datetime('now'))`, [messageId, userId, emoji]);
+        if (groupId) {
+          io.to(`group:${groupId}`).emit('reaction:added', { messageId, userId, emoji, groupId });
+        }
+      } catch (e) { /* ignore duplicates */ }
+    });
+
+    socket.on('reaction:remove', ({ messageId, emoji, groupId }) => {
+      if (!messageId || !emoji) return;
+      run('DELETE FROM message_reactions WHERE messageId = ? AND userId = ? AND emoji = ?', [messageId, userId, emoji]);
+      if (groupId) {
+        io.to(`group:${groupId}`).emit('reaction:removed', { messageId, userId, emoji, groupId });
+      }
+    });
+
+    socket.on('reaction:get', ({ messageId }, callback) => {
+      if (!messageId) return callback && callback([]);
+      const reactions = query(
+        'SELECT r.userId, r.emoji, r.createdAt, u.username FROM message_reactions r JOIN users u ON r.userId = u.id WHERE r.messageId = ?',
+        [messageId]
+      );
+      callback && callback(reactions);
+    });
+
+    socket.on('users:online', ({ userIds }, callback) => {
+      if (!userIds || !Array.isArray(userIds)) return callback && callback({});
+      const placeholders = userIds.map(() => '?').join(',');
+      const onlineUsersList = query(
+        `SELECT userId, isOnline, lastSeenAt FROM online_status WHERE userId IN (${placeholders})`,
+        userIds
+      );
+      const statusMap = {};
+      onlineUsersList.forEach(u => {
+        statusMap[u.userId] = { isOnline: u.isOnline === 1, lastSeenAt: u.lastSeenAt };
+      });
+      callback && callback(statusMap);
     });
 
     socket.on('group:create', (data) => {

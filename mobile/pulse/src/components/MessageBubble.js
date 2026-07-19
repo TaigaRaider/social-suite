@@ -12,7 +12,7 @@ export default function MessageBubble({ message, isSent }) {
     <View style={[styles.row, isSent ? styles.sentRow : styles.receivedRow]}>
       <View style={[styles.bubble, isSent ? styles.sent : styles.received]}>
         <Text style={[styles.text, isSent ? styles.sentText : styles.receivedText]}>
-          {message.content}
+          {message.encrypted ? '🔒 ' : ''}{message.content}
         </Text>
         <Text style={[styles.time, isSent ? styles.sentTime : styles.receivedTime]}>
           {formatTime(message.createdAt || message.timestamp)}

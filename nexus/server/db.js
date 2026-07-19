@@ -32,6 +32,8 @@ export async function initDB() {
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  try { db.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'"); } catch(e) {}
+
   db.run(`CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER NOT NULL,
@@ -246,13 +248,40 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_two_factor_userId ON two_factor(userId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)');
 
+  process.on('SIGINT', () => { flushDB(); process.exit(0); });
+  process.on('SIGTERM', () => { flushDB(); process.exit(0); });
+
   return db;
 }
 
+let saveTimeout = null;
+let dirty = false;
+
 export function saveDB() {
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  writeFileSync(DB_PATH, buffer);
+  dirty = true;
+  if (saveTimeout) return;
+  saveTimeout = setTimeout(() => {
+    if (dirty && db) {
+      const data = db.export();
+      const buffer = Buffer.from(data);
+      writeFileSync(DB_PATH, buffer);
+      dirty = false;
+    }
+    saveTimeout = null;
+  }, 100);
+}
+
+export function flushDB() {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+    saveTimeout = null;
+  }
+  if (dirty && db) {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    writeFileSync(DB_PATH, buffer);
+    dirty = false;
+  }
 }
 
 export function query(sql, params = []) {

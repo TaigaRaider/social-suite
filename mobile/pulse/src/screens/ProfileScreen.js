@@ -32,6 +32,11 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.menuText}>Privacy</Text>
           <Ionicons name="chevron-forward" size={18} color="#8899a6" />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('DeviceManager')}>
+          <Ionicons name="phone-portrait-outline" size={22} color="#fff" />
+          <Text style={styles.menuText}>Linked Devices</Text>
+          <Ionicons name="chevron-forward" size={18} color="#8899a6" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="help-circle-outline" size={22} color="#fff" />
           <Text style={styles.menuText}>Help</Text>

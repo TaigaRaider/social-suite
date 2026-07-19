@@ -50,7 +50,7 @@ export default function MessageBubble({ message, isSent }) {
       onMouseEnter={() => setShowReactionPicker(true)}
       onMouseLeave={() => setShowReactionPicker(false)}
       style={{ position: 'relative' }}>
-      <div className="message-bubble">{message.content}</div>
+      <div className="message-bubble">{message.encrypted ? '🔒 ' : ''}{message.content}</div>
       {showReactionPicker && (
         <div style={{ position: 'absolute', bottom: '100%', display: 'flex', gap: 2, background: 'var(--card-bg, #fff)', border: '1px solid var(--border, #e0e0e0)', borderRadius: 20, padding: '4px 6px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', zIndex: 10, ...(isSent ? { right: 0 } : { left: 0 }) }}>
           {REACTION_EMOJIS.map(emoji => (

@@ -26,7 +26,7 @@ export default function MessageBubble({ message, isOwn }) {
         {!isOwn && (
           <Text style={[styles.sender, { color: getSenderColor(senderName) }]}>{senderName}</Text>
         )}
-        <Text style={styles.content}>{content}</Text>
+        <Text style={styles.content}>{message.encrypted ? '🔒 ' : ''}{content}</Text>
         <Text style={[styles.time, isOwn && styles.timeOwn]}>{time}</Text>
       </View>
     </View>

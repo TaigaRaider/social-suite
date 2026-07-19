@@ -5,6 +5,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import MessageBubble from '../components/MessageBubble';
+import { loadIdentity, generateLocalIdentity, uploadKeyBundle, sendMessage as sendEncrypted, isE2EEEnabled } from '../crypto/signalProtocol';
 
 export default function GroupChatScreen({ route, navigation }) {
   const { groupId, groupName } = route.params;
@@ -62,12 +63,27 @@ export default function GroupChatScreen({ route, navigation }) {
     });
   }, [navigation, groupName, memberCount, groupId]);
 
+  useEffect(() => {
+    const initCrypto = async () => {
+      const identity = await loadIdentity();
+      if (!identity) {
+        await generateLocalIdentity();
+        if (token) await uploadKeyBundle(token);
+      }
+    };
+    if (token) initCrypto();
+  }, [token]);
+
   const handleSend = async () => {
     const msg = text.trim();
     if (!msg) return;
     setText('');
     try {
-      await api.sendMessage(groupId, { content: msg, text: msg }, token);
+      if (isE2EEEnabled()) {
+        await sendEncrypted(groupId, msg, token);
+      } else {
+        await api.sendMessage(groupId, { content: msg, text: msg }, token);
+      }
       await fetchMessages();
     } catch (err) {
       setText(msg);

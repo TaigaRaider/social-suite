@@ -82,8 +82,12 @@ router.get('/:id/messages', auth, (req, res) => {
 });
 
 router.post('/:id/messages', auth, (req, res) => {
-  const { content } = req.body;
-  if (!content || !content.trim()) return res.status(400).json({ error: 'Content is required' });
+  const { content, ciphertext, nonce, ratchetHeader, replyToId } = req.body;
+  const isEncrypted = ciphertext && nonce && ratchetHeader;
+
+  if (!isEncrypted && (!content || !content.trim())) {
+    return res.status(400).json({ error: 'Content is required' });
+  }
 
   const member = queryOne(
     'SELECT id FROM conversation_members WHERE conversationId = ? AND userId = ?',
@@ -92,8 +96,18 @@ router.post('/:id/messages', auth, (req, res) => {
   if (!member) return res.status(403).json({ error: 'Not a member' });
 
   const result = run(
-    'INSERT INTO messages (conversationId, senderId, content) VALUES (?, ?, ?)',
-    [req.params.id, req.userId, content.trim()]
+    `INSERT INTO messages (conversationId, senderId, content, encrypted, ciphertext, nonce, ratchetHeader, replyToId)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      req.params.id,
+      req.userId,
+      isEncrypted ? '[encrypted]' : content.trim(),
+      isEncrypted ? 1 : 0,
+      ciphertext || null,
+      nonce || null,
+      ratchetHeader ? JSON.stringify(ratchetHeader) : null,
+      replyToId || null
+    ]
   );
 
   const message = queryOne(

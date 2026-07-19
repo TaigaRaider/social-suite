@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../api';
+import { init as initCrypto, generateLocalIdentity, uploadKeyBundle, isE2EEEnabled } from '../crypto/signalProtocol.js';
+import { generateOneTimePreKeys } from '../crypto/keyGeneration.js';
 
 const AuthContext = createContext(null);
 
@@ -11,7 +13,25 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('wave_token');
     if (token) {
       api.auth.me()
-        .then(u => { setUser(u); setLoading(false); })
+        .then(u => {
+          setUser(u);
+          setLoading(false);
+          initCrypto('http://localhost:3004/api');
+          if (!isE2EEEnabled()) {
+            generateLocalIdentity();
+          }
+          uploadKeyBundle(token).catch(() => {});
+          const checkPreKeys = async () => {
+            try {
+              const bundle = await api.crypto.getPeerBundle(u.id);
+              if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
+                const newKeys = generateOneTimePreKeys(50);
+                await api.crypto.replenishPreKeys(newKeys);
+              }
+            } catch (e) { /* ignore */ }
+          };
+          checkPreKeys();
+        })
         .catch(() => { localStorage.removeItem('wave_token'); setLoading(false); });
     } else {
       setLoading(false);
@@ -22,6 +42,21 @@ export function AuthProvider({ children }) {
     const { token, user } = await api.auth.login({ email, password });
     localStorage.setItem('wave_token', token);
     setUser(user);
+    initCrypto('http://localhost:3004/api');
+    if (!isE2EEEnabled()) {
+      generateLocalIdentity();
+    }
+    uploadKeyBundle(token).catch(() => {});
+    const checkPreKeys = async () => {
+      try {
+        const bundle = await api.crypto.getPeerBundle(user.id);
+        if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
+          const newKeys = generateOneTimePreKeys(50);
+          await api.crypto.replenishPreKeys(newKeys);
+        }
+      } catch (e) { /* ignore */ }
+    };
+    checkPreKeys();
     return user;
   };
 
@@ -29,6 +64,21 @@ export function AuthProvider({ children }) {
     const { token, user } = await api.auth.register(data);
     localStorage.setItem('wave_token', token);
     setUser(user);
+    initCrypto('http://localhost:3004/api');
+    if (!isE2EEEnabled()) {
+      generateLocalIdentity();
+    }
+    uploadKeyBundle(token).catch(() => {});
+    const checkPreKeys = async () => {
+      try {
+        const bundle = await api.crypto.getPeerBundle(user.id);
+        if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
+          const newKeys = generateOneTimePreKeys(50);
+          await api.crypto.replenishPreKeys(newKeys);
+        }
+      } catch (e) { /* ignore */ }
+    };
+    checkPreKeys();
     return user;
   };
 

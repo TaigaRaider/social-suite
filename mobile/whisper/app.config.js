@@ -3,7 +3,7 @@ export default {
     name: "Whisper",
     slug: "whisper",
     owner: "tatatis-team",
-    version: "1.0.0",
+    version: "1.1.2",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
@@ -16,7 +16,10 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.socialsuite.whisper",
-      buildNumber: "1"
+      buildNumber: "1",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false
+      }
     },
     android: {
       adaptiveIcon: {

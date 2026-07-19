@@ -9,6 +9,8 @@ import Signup from './pages/Signup';
 import ChatList from './pages/ChatList';
 import Onboarding from './components/Onboarding';
 import Splash from './components/Splash';
+import DeviceManager from './components/DeviceManager';
+import { api } from './api';
 import './App.css';
 
 function ProtectedRoute({ children }) {
@@ -44,6 +46,7 @@ function AppInner() {
               <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
               <Route path="/" element={<ProtectedRoute><ChatList /></ProtectedRoute>} />
               <Route path="/chat/:conversationId" element={<ProtectedRoute><ChatList /></ProtectedRoute>} />
+              <Route path="/devices" element={<ProtectedRoute><DeviceManager api={api} /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </OnboardingGate>

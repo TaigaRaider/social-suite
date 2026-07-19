@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
+import pinoHttp from 'pino-http';
+import logger from './logger.js';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { initDB, getDb } from './db.js';
@@ -15,6 +18,10 @@ import reactionRoutes from './routes/reactions.js';
 import messagingFeaturesRoutes from './routes/messaging-features.js';
 import twofaRoutes from './routes/twofa.js';
 import passwordResetRoutes from './routes/password-reset.js';
+import cryptoRoutes from './routes/crypto.js';
+import accountRoutes from './routes/account.js';
+import adminRoutes from './routes/admin.js';
+import { startKeyRotation } from './keyRotation.js';
 
 const app = express();
 const server = createServer(app);
@@ -22,6 +29,8 @@ const PORT = 3004;
 
 setupWebSocket(server);
 
+app.use(compression());
+app.use(pinoHttp({ logger }));
 app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -29,7 +38,7 @@ app.use(cors({
 }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 app.use(sanitizeInput());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(auditLog(getDb()));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many auth attempts' });
@@ -46,17 +55,39 @@ app.use('/api/reactions', reactionRoutes);
 app.use('/api/messaging', messagingFeaturesRoutes);
 app.use('/api/2fa', twofaRoutes);
 app.use('/api/auth', passwordResetRoutes);
+app.use('/api/crypto', cryptoRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  try {
+    const db = getDb();
+    db.exec('SELECT 1');
+    res.json({ status: 'ok', db: 'connected', uptime: process.uptime(), ws: 'active' });
+  } catch (err) {
+    res.status(503).json({ status: 'error', db: 'disconnected', error: err.message });
+  }
+});
+
+app.use((err, req, res, _next) => {
+  logger.error({ err, method: req.method, path: req.path }, 'Request error');
+  res.status(err.status || 500).json({ error: 'Internal server error' });
+});
+
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception');
+});
+process.on('unhandledRejection', (reason) => {
+  logger.fatal({ err: reason }, 'Unhandled rejection');
 });
 
 cleanupOldEntries();
 
 async function start() {
   await initDB();
+  startKeyRotation();
   server.listen(PORT, () => {
-    console.log(`Wave server running on port ${PORT} with WebSocket`);
+    logger.info({ port: PORT }, 'Wave server started');
   });
 }
 

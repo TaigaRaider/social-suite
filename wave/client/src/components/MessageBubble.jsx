@@ -77,7 +77,7 @@ export default function MessageBubble({ message, isSent, showSender }) {
           {displayName}
         </div>
       )}
-      <div className="message-text">{message.content}</div>
+      <div className="message-text">{message.encrypted ? '🔒 ' : ''}{message.content}</div>
       {reactions.length > 0 && (
         <div style={{ display: 'flex', gap: 3, marginTop: 2, flexWrap: 'wrap' }}>
           {reactions.map((r, i) => (

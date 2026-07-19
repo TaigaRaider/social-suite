@@ -1,0 +1,42 @@
+{
+  "name": "social-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Social Suite - 5 social media platform suite",
+  "workspaces": [
+    "nexus/server",
+    "nexus/src",
+    "lumina/server",
+    "lumina/src",
+    "pulse/server",
+    "pulse/src",
+    "wave/server",
+    "wave/src",
+    "whisper/server",
+    "whisper/src"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:nexus\" \"npm run dev:lumina\" \"npm run dev:pulse\" \"npm run dev:wave\" \"npm run dev:whisper\"",
+    "dev:nexus": "cd nexus/server && node index.js",
+    "dev:lumina": "cd lumina/server && node index.js",
+    "dev:pulse": "cd pulse/server && node index.js",
+    "dev:wave": "cd wave/server && node index.js",
+    "dev:whisper": "cd whisper/server && node index.js",
+    "dev:mobile": "cd mobile/nexus && npx expo start",
+    "install:all": "npm install && npm install --workspaces",
+    "start": "npm run dev",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern .eslintignore",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix --ignore-pattern .eslintignore",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css}\"",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0"
+  }
+}

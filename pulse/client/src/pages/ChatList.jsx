@@ -15,6 +15,7 @@ export default function ChatList() {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [search, setSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [activeConv, setActiveConv] = useState(null);
   const [mobileShowChat, setMobileShowChat] = useState(!!conversationId);
@@ -79,11 +80,17 @@ export default function ChatList() {
   };
 
   const filtered = conversations.filter(c => {
-    if (!search) return true;
-    const name = (c.otherFirstName || c.otherLastName)
-      ? `${c.otherFirstName || ''} ${c.otherLastName || ''}`.trim().toLowerCase()
-      : c.otherUsername.toLowerCase();
-    return name.includes(search.toLowerCase()) || c.lastMessage?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = !search || (() => {
+      const name = (c.otherFirstName || c.otherLastName)
+        ? `${c.otherFirstName || ''} ${c.otherLastName || ''}`.trim().toLowerCase()
+        : c.otherUsername.toLowerCase();
+      return name.includes(search.toLowerCase()) || c.lastMessage?.toLowerCase().includes(search.toLowerCase());
+    })();
+    const matchesEncryptedSearch = !searchQuery || (() => {
+      const name = `${c.otherFirstName || ''} ${c.otherLastName || ''} ${c.otherUsername || ''}`.toLowerCase();
+      return name.includes(searchQuery.toLowerCase());
+    })();
+    return matchesSearch && matchesEncryptedSearch;
   });
 
   const handleMessageSearch = (value) => {
@@ -194,6 +201,22 @@ export default function ChatList() {
                 placeholder="Search conversations..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+          )}
+
+          {!showMessageSearch && (
+            <div style={{ padding: '0 8px' }}>
+              <input
+                type="text"
+                placeholder="Search encrypted messages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%', padding: '8px 12px', margin: '8px 0',
+                  border: '1px solid #ddd', borderRadius: '20px', fontSize: '14px',
+                  outline: 'none'
+                }}
               />
             </div>
           )}

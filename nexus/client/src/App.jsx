@@ -11,6 +11,9 @@ import Feed from './pages/Feed';
 import Profile from './pages/Profile';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
+import Analytics from './pages/Analytics';
+import ScheduledPosts from './pages/ScheduledPosts';
+import Admin from './pages/Admin';
 import { useState, useCallback } from 'react';
 import './App.css';
 
@@ -43,6 +46,9 @@ function AppRoutes() {
         <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
         <Route path="/messages/:userId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/scheduled" element={<ProtectedRoute><ScheduledPosts /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>

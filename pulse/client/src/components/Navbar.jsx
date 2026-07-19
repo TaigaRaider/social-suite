@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../api';
@@ -7,6 +8,7 @@ import ShortcutsModal from './ShortcutsModal';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -114,6 +116,10 @@ export default function Navbar() {
                 )}
                 <button className="dropdown-item" onClick={handleExport} disabled={exporting}>
                   {exporting ? 'Exporting...' : 'Download My Data'}
+                </button>
+                <button className="dropdown-item" onClick={() => { setShowDropdown(false); navigate('/devices'); }}>
+                  <span style={{ fontSize: 14, marginRight: 8 }}>🔐</span>
+                  Linked Devices
                 </button>
                 <button className="dropdown-item danger" onClick={handleLogout}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import GroupListItem from '../components/GroupListItem';
@@ -48,6 +49,9 @@ export default function GroupsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Wave</Text>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('DeviceManager')}>
+          <Ionicons name="phone-portrait-outline" size={22} color="#e9edef" />
+        </TouchableOpacity>
       </View>
       <FlatList
         data={groups}
@@ -82,8 +86,12 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 14,
     paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: { color: '#e9edef', fontSize: 22, fontWeight: '800' },
+  settingsBtn: { padding: 4 },
   separator: { height: 1, backgroundColor: '#222d34', marginLeft: 80 },
   empty: { alignItems: 'center', marginTop: 80 },
   emptyText: { color: '#8696a0', fontSize: 18, fontWeight: '600' },
