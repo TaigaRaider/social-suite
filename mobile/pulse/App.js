@@ -17,6 +17,7 @@ import ChatScreen from './src/screens/ChatScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import DeviceManagerScreen from './src/screens/DeviceManagerScreen';
 import CallScreen from './src/screens/CallScreen';
+import ThreadScreen from './src/screens/ThreadScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -111,6 +112,11 @@ function AppNavigator() {
           <RootStack.Screen
             name="CallScreen"
             component={CallScreen}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="Thread"
+            component={ThreadScreen}
             options={{ headerShown: false }}
           />
         </RootStack.Group>

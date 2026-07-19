@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
+import { Audio } from 'expo-av';
 import MessageBubble from '../components/MessageBubble';
 import { loadIdentity, generateLocalIdentity, uploadKeyBundle, sendMessage as sendEncrypted, isE2EEEnabled } from '../crypto/signalProtocol';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,40 @@ export default function GroupChatScreen({ route, navigation }) {
   const [stickerPacks, setStickerPacks] = useState([]);
   const [activePack, setActivePack] = useState(null);
   const flatListRef = useRef(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const startRecording = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') return alert('Microphone permission required');
+
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: true });
+    const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    recordingRef.current = recording;
+    setIsRecording(true);
+    setRecordingTime(0);
+    timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+  };
+
+  const stopRecording = async () => {
+    clearInterval(timerRef.current);
+    setIsRecording(false);
+    await recordingRef.current.stopAndUnloadAsync();
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+
+    const duration = recordingTime;
+    const content = `Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})`;
+    setText(content);
+    await handleSend();
+  };
+
+  const formatRecordingTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     const loadStickers = async () => {
@@ -221,6 +256,15 @@ export default function GroupChatScreen({ route, navigation }) {
           multiline
           maxLength={2000}
         />
+        <TouchableOpacity onPress={isRecording ? stopRecording : startRecording} style={styles.recordBtn}>
+          <Ionicons name={isRecording ? "stop" : "mic"} size={22} color={isRecording ? "#f44336" : "#00a884"} />
+        </TouchableOpacity>
+        {isRecording && (
+          <View style={styles.recordingIndicator}>
+            <View style={styles.recordingDot} />
+            <Text style={styles.recordingTime}>{formatRecordingTime(recordingTime)}</Text>
+          </View>
+        )}
         <TouchableOpacity style={styles.sendBtn} onPress={handleSend} activeOpacity={0.7}>
           <Text style={styles.sendBtnText}>Send</Text>
         </TouchableOpacity>
@@ -358,5 +402,26 @@ const styles = StyleSheet.create({
   stickerBtn: {
     paddingBottom: 6,
     marginRight: 4,
+  },
+  recordBtn: {
+    paddingBottom: 6,
+    marginRight: 4,
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginRight: 8,
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#f44336',
+  },
+  recordingTime: {
+    color: '#f44336',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

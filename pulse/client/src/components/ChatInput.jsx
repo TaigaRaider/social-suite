@@ -1,12 +1,16 @@
 import { useState, useRef, useCallback } from 'react';
 import { api } from '../api';
 
-export default function ChatInput({ onSend, conversationId }) {
+export default function ChatInput({ onSend, conversationId, socket }) {
   const [text, setText] = useState('');
   const [showStickers, setShowStickers] = useState(false);
   const [stickerPacks, setStickerPacks] = useState([]);
   const [activePack, setActivePack] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const typingTimerRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordingIntervalRef = useRef(null);
 
   const loadStickers = async () => {
     try {
@@ -42,6 +46,59 @@ export default function ChatInput({ onSend, conversationId }) {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      const chunks = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        sendVoiceMessage(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(t => t + 1);
+      }, 1000);
+    } catch (err) {
+      alert('Could not access microphone');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordingIntervalRef.current);
+    }
+  };
+
+  const sendVoiceMessage = async (blob) => {
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result.split(',')[1];
+      const duration = recordingTime;
+
+      if (socket) {
+        socket.emit('message:send', {
+          messageType: 'voice',
+          voiceData: base64,
+          voiceDuration: duration,
+          conversationId,
+          content: `Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})`
+        });
+      }
+    };
+    reader.readAsDataURL(blob);
+  };
+
   return (
     <div className="chat-input-area" style={{ position: 'relative' }}>
       {showStickers && (
@@ -64,10 +121,21 @@ export default function ChatInput({ onSend, conversationId }) {
           </div>
         </div>
       )}
+      {isRecording && (
+        <div style={{ padding: '8px 12px', background: '#fef2f2', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f44336', animation: 'pulse 1s infinite' }} />
+          <span style={{ fontSize: 13, color: '#f44336', fontWeight: 600 }}>Recording {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}</span>
+        </div>
+      )}
       <form className="chat-input-form" onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <button type="button" onClick={() => { setShowStickers(!showStickers); if (stickerPacks.length === 0) loadStickers(); }}
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: 4 }} title="Stickers">
           😊
+        </button>
+        <button type="button" onClick={isRecording ? stopRecording : startRecording}
+          style={{ background: isRecording ? '#f44336' : 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: 4, borderRadius: '50%', color: isRecording ? 'white' : 'inherit' }}
+          title={isRecording ? 'Stop recording' : 'Record voice message'}>
+          🎤
         </button>
         <input
           type="text"

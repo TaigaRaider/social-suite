@@ -3,7 +3,7 @@ export default {
     name: "Facebook",
     slug: "facebook",
     owner: "tatatis-team",
-    version: "1.1.4",
+    version: "1.1.5",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",

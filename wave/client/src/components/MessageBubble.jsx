@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import ThreadView from './ThreadView';
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '👎'];
 
@@ -7,6 +8,8 @@ export default function MessageBubble({ message, isSent, showSender }) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactions, setReactions] = useState([]);
   const [userReactions, setUserReactions] = useState([]);
+  const [showThread, setShowThread] = useState(false);
+  const [replyCount, setReplyCount] = useState(0);
 
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
@@ -53,6 +56,18 @@ export default function MessageBubble({ message, isSent, showSender }) {
     return <span style={{ marginLeft: 4, color: 'rgba(255,255,255,0.5)' }}>✓✓</span>;
   };
 
+  const playVoice = async (messageId) => {
+    try {
+      const data = await api.crypto.getVoiceMessage(messageId);
+      const audio = new Audio(`data:audio/webm;base64,${data.audio}`);
+      audio.play();
+    } catch {}
+  };
+
+  const onReply = (msg) => {
+    console.log('Reply to message:', msg.id);
+  };
+
   return (
     <div
       className={`message-bubble ${isSent ? 'sent' : 'received'}`}
@@ -77,7 +92,24 @@ export default function MessageBubble({ message, isSent, showSender }) {
           {displayName}
         </div>
       )}
-      <div className="message-text">{message.encrypted ? '🔒 ' : ''}{message.content}</div>
+      <div className="message-text">
+        {message.encrypted ? '🔒 ' : ''}
+        {message.messageType === 'voice' ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={() => playVoice(message.id)} style={{ background: isSent ? 'rgba(255,255,255,0.2)' : '#00a884', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              ▶
+            </button>
+            <div style={{ flex: 1, height: 4, background: isSent ? 'rgba(255,255,255,0.3)' : '#2a3942', borderRadius: 2, position: 'relative', minWidth: 60 }}>
+              <div style={{ width: '0%', height: '100%', background: isSent ? 'white' : '#00a884', borderRadius: 2 }} />
+            </div>
+            <span style={{ fontSize: 11, opacity: 0.8 }}>
+              {message.voiceDuration ? `${Math.floor(message.voiceDuration / 60)}:${(message.voiceDuration % 60).toString().padStart(2, '0')}` : '0:00'}
+            </span>
+          </div>
+        ) : (
+          message.content
+        )}
+      </div>
       {reactions.length > 0 && (
         <div style={{ display: 'flex', gap: 3, marginTop: 2, flexWrap: 'wrap' }}>
           {reactions.map((r, i) => (
@@ -88,10 +120,25 @@ export default function MessageBubble({ message, isSent, showSender }) {
           ))}
         </div>
       )}
+      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        <button onClick={() => onReply(message)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#00a884' }}>
+          &#8617; Reply
+        </button>
+        {replyCount > 0 && (
+          <button onClick={() => setShowThread(!showThread)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#00a884' }}>
+            {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
+          </button>
+        )}
+      </div>
       <div className="message-time">
         {formatTime(message.createdAt)}
         {getReadIcon()}
       </div>
+      {showThread && (
+        <div style={{ borderLeft: '3px solid #00a884', marginLeft: 8, marginTop: 8, padding: 12, background: '#1f2c34', borderRadius: '0 8px 8px 0', height: 300 }}>
+          <ThreadView messageId={message.id} api={api} socket={null} user={null} onClose={() => setShowThread(false)} />
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@
 - MAJOR: Major platform changes
 - MINOR: Feature sprints (resets each major)
 - PATCH: Sprint increments (1.1.0 -> 1.1.1 -> 1.1.2)
-- Current: 1.1.4 (Sprint 6)
+- Current: 1.1.5 (Sprint 7)
 
 ## App Ports & DB Schemas
 | App | Port | Version | Key Features |
@@ -590,6 +590,23 @@ Added indexes on all foreign keys, lookup columns, and frequently queried fields
 - Disappearing messages toggle (⏱️) in chat headers
 - Client-side conversation search for encrypted chats
 - Pre-key replenishment auto-check on login/register
+- All servers syntax OK, all web clients build clean
+
+## Sprint 7 Changelog (v1.1.5)
+- Version bumped 1.1.4 → 1.1.5 across all Expo apps + eas.json (build 7)
+- Threaded replies:
+  - threadId + replyToId columns on messages
+  - Thread message API with reply count
+  - ThreadView component (web) with parent message + reply list
+  - ThreadScreen (mobile) with FlatList + reply input
+  - Thread button on MessageBubble with inline thread panel
+- Voice messages:
+  - messageType column + voiceData/voiceDuration columns
+  - Voice upload/retrieval API endpoints
+  - Microphone button in ChatInput with recording timer
+  - Audio playback in MessageBubble with play button + duration
+  - expo-av integration for mobile recording
+  - Waveform-style UI for voice messages
 - All servers syntax OK, all web clients build clean
 
 ## Sprint 6 Changelog (v1.1.4)

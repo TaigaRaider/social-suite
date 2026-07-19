@@ -733,4 +733,102 @@ router.delete('/stickers/install/:packId', auth, (req, res) => {
   }
 });
 
+// Get thread messages (replies to a message)
+router.get('/messages/:messageId/thread', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const offset = parseInt(req.query.offset) || 0;
+
+    const messages = query(
+      `SELECT m.*, u.username, u.firstName, u.lastName
+       FROM messages m JOIN users u ON m.senderId = u.id
+       WHERE m.threadId = ? OR m.replyToId = ?
+       ORDER BY m.createdAt ASC LIMIT ? OFFSET ?`,
+      [messageId, messageId, limit, offset]
+    );
+
+    const count = queryOne(
+      'SELECT COUNT(*) as count FROM messages WHERE threadId = ? OR replyToId = ?',
+      [messageId, messageId]
+    );
+
+    res.json({ messages, total: count?.count || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get thread' });
+  }
+});
+
+// Get message with reply count
+router.get('/messages/:messageId/details', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const message = queryOne(
+      `SELECT m.*, u.username, u.firstName, u.lastName
+       FROM messages m JOIN users u ON m.senderId = u.id
+       WHERE m.id = ?`,
+      [messageId]
+    );
+
+    if (!message) return res.status(404).json({ error: 'Message not found' });
+
+    const replyCount = queryOne(
+      'SELECT COUNT(*) as count FROM messages WHERE replyToId = ?',
+      [messageId]
+    );
+
+    const threadCount = queryOne(
+      'SELECT COUNT(*) as count FROM messages WHERE threadId = ?',
+      [messageId]
+    );
+
+    res.json({
+      message,
+      replyCount: replyCount?.count || 0,
+      threadCount: threadCount?.count || 0
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get message details' });
+  }
+});
+
+// Upload voice message
+router.post('/messages/voice', auth, (req, res) => {
+  try {
+    const { receiverId, groupId, voiceData, voiceDuration, content, threadId, replyToId } = req.body;
+
+    if (!voiceData) return res.status(400).json({ error: 'voiceData required' });
+
+    const result = run(
+      `INSERT INTO messages (senderId, receiverId, groupId, content, messageType, voiceData, voiceDuration, threadId, replyToId, createdAt)
+       VALUES (?, ?, ?, ?, 'voice', ?, ?, ?, ?, datetime('now'))`,
+      [req.userId, receiverId || null, groupId || null, content || '', Buffer.from(voiceData, 'base64'), voiceDuration || 0, threadId || null, replyToId || null]
+    );
+
+    saveDB();
+    res.json({ success: true, messageId: result.lastId });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save voice message' });
+  }
+});
+
+// Get voice message audio
+router.get('/messages/:messageId/voice', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const message = queryOne('SELECT voiceData, voiceDuration FROM messages WHERE id = ? AND messageType = ?', [messageId, 'voice']);
+
+    if (!message || !message.voiceData) {
+      return res.status(404).json({ error: 'Voice message not found' });
+    }
+
+    res.json({
+      audio: message.voiceData.toString('base64'),
+      duration: message.voiceDuration
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get voice message' });
+  }
+});
+
 export default router;

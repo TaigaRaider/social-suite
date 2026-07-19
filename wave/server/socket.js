@@ -51,29 +51,40 @@ export function setupWebSocket(server) {
     });
 
     socket.on('message:send', (data) => {
-      const { groupId, content, ciphertext, nonce, ratchetHeader, replyToId, deviceId } = data;
+      const { groupId, content, ciphertext, nonce, ratchetHeader, replyToId, deviceId, messageType, voiceData, voiceDuration, threadId } = data;
 
       const membership = queryOne('SELECT id FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
       if (!membership) return;
 
       const isEncrypted = ciphertext && nonce && ratchetHeader;
-      if (!isEncrypted && (!content || !content.trim())) return;
+      const isVoice = messageType === 'voice' && voiceData;
+      if (!isEncrypted && !isVoice && (!content || !content.trim())) return;
 
       const result = run(
-        `INSERT INTO messages (groupId, senderId, content, encrypted, ciphertext, nonce, ratchetHeader, replyToId, deviceId)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO messages (groupId, senderId, content, encrypted, ciphertext, nonce, ratchetHeader, replyToId, deviceId, messageType, voiceData, voiceDuration, threadId)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           groupId,
           userId,
-          isEncrypted ? '[encrypted]' : content.trim(),
+          isEncrypted ? '[encrypted]' : (content || '').trim(),
           isEncrypted ? 1 : 0,
           ciphertext || null,
           nonce || null,
           ratchetHeader ? JSON.stringify(ratchetHeader) : null,
           replyToId || null,
-          deviceId || null
+          deviceId || null,
+          isVoice ? 'voice' : (messageType || 'text'),
+          isVoice ? Buffer.from(voiceData, 'base64') : null,
+          isVoice ? (voiceDuration || 0) : null,
+          threadId || null
         ]
       );
+
+      // Handle thread/reply
+      if (threadId || replyToId) {
+        const tid = threadId || replyToId;
+        run('UPDATE messages SET threadId = ? WHERE id = ?', [tid, result.lastId]);
+      }
 
       const message = queryOne(`
         SELECT m.*, u.username as senderName, u.firstName as senderFirstName, u.lastName as senderLastName, u.avatar as senderAvatar

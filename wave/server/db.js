@@ -413,6 +413,16 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_token ON push_tokens(token)');
   db.run('CREATE INDEX IF NOT EXISTS idx_messages_readAt ON messages(readAt)');
 
+  try { db.run("ALTER TABLE messages ADD COLUMN threadId INTEGER DEFAULT NULL"); } catch(e) {}
+  try { db.run("ALTER TABLE messages ADD COLUMN replyToId INTEGER DEFAULT NULL"); } catch(e) {}
+  try { db.run("ALTER TABLE messages ADD COLUMN messageType TEXT DEFAULT 'text'"); } catch(e) {}
+  try { db.run("ALTER TABLE messages ADD COLUMN voiceData BLOB DEFAULT NULL"); } catch(e) {}
+  try { db.run("ALTER TABLE messages ADD COLUMN voiceDuration REAL DEFAULT NULL"); } catch(e) {}
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(threadId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_messages_replyTo ON messages(replyToId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_messages_type ON messages(messageType)');
+
   db.run(`CREATE TABLE IF NOT EXISTS call_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     callerId INTEGER NOT NULL,

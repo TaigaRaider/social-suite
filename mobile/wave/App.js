@@ -15,6 +15,7 @@ import NewGroupScreen from './src/screens/NewGroupScreen';
 import MembersScreen from './src/screens/MembersScreen';
 import DeviceManagerScreen from './src/screens/DeviceManagerScreen';
 import CallScreen from './src/screens/CallScreen';
+import ThreadScreen from './src/screens/ThreadScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +44,7 @@ function MainStack() {
       <Stack.Screen name="Members" component={MembersScreen} />
       <Stack.Screen name="DeviceManager" component={DeviceManagerScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CallScreen" component={CallScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Thread" component={ThreadScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

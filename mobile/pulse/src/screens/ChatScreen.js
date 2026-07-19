@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import MessageBubble from '../components/MessageBubble';
@@ -57,6 +58,10 @@ export default function ChatScreen({ route, navigation }) {
   const [showStickers, setShowStickers] = useState(false);
   const [stickerPacks, setStickerPacks] = useState([]);
   const [activePack, setActivePack] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingRef = useRef(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     const loadStickers = async () => {
@@ -143,6 +148,38 @@ export default function ChatScreen({ route, navigation }) {
     }
   }
 
+  const startRecording = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') return alert('Microphone permission required');
+
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: true });
+    const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    recordingRef.current = recording;
+    setIsRecording(true);
+    setRecordingTime(0);
+    timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+  };
+
+  const stopRecording = async () => {
+    clearInterval(timerRef.current);
+    setIsRecording(false);
+    await recordingRef.current.stopAndUnloadAsync();
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+
+    const uri = recordingRef.current.getURI();
+    const duration = recordingTime;
+
+    const content = `Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})`;
+    setText(content);
+    await handleSend();
+  };
+
+  const formatRecordingTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   function handleScroll(e) {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const distanceFromBottom =
@@ -224,6 +261,15 @@ export default function ChatScreen({ route, navigation }) {
           multiline
           maxLength={2000}
         />
+        <TouchableOpacity onPress={isRecording ? stopRecording : startRecording} style={styles.recordBtn}>
+          <Ionicons name={isRecording ? "stop" : "mic"} size={22} color={isRecording ? "#f44336" : "#0084ff"} />
+        </TouchableOpacity>
+        {isRecording && (
+          <View style={styles.recordingIndicator}>
+            <View style={styles.recordingDot} />
+            <Text style={styles.recordingTime}>{formatRecordingTime(recordingTime)}</Text>
+          </View>
+        )}
         <TouchableOpacity
           style={[styles.sendButton, !text.trim() && { opacity: 0.4 }]}
           onPress={handleSend}
@@ -336,5 +382,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
+  },
+  recordBtn: {
+    paddingBottom: 6,
+    marginRight: 4,
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginRight: 8,
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#f44336',
+  },
+  recordingTime: {
+    color: '#f44336',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
