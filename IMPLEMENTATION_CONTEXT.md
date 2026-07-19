@@ -11,7 +11,7 @@
 - MAJOR: Major platform changes
 - MINOR: Feature sprints (resets each major)
 - PATCH: Sprint increments (1.1.0 -> 1.1.1 -> 1.1.2)
-- Current: 1.1.3 (Sprint 5)
+- Current: 1.1.4 (Sprint 6)
 
 ## App Ports & DB Schemas
 | App | Port | Version | Key Features |
@@ -590,6 +590,26 @@ Added indexes on all foreign keys, lookup columns, and frequently queried fields
 - Disappearing messages toggle (⏱️) in chat headers
 - Client-side conversation search for encrypted chats
 - Pre-key replenishment auto-check on login/register
+- All servers syntax OK, all web clients build clean
+
+## Sprint 6 Changelog (v1.1.4)
+- Version bumped 1.1.3 → 1.1.4 across all Expo apps + eas.json (build 6)
+- Voice/video call signaling (WebRTC foundation):
+  - call_sessions DB table with status tracking
+  - Call initiate/answer/end/reject API endpoints
+  - WebSocket signaling: offer, answer, ICE candidates, mute, video toggle, screen share
+  - CallManager.jsx component with peer connection management
+  - Voice/video call buttons in chat headers
+  - CallScreen.js for mobile with duration timer
+- Sticker packs:
+  - sticker_packs + user_sticker_packs DB tables
+  - 4 default packs: Smileys, Gestures, Hearts, Objects
+  - Sticker picker UI in ChatInput with pack tabs and grid
+  - Install/uninstall sticker packs API
+- Offline message queue:
+  - localStorage-based message queue when offline
+  - Auto-flush on reconnection
+  - isOnline state in AuthContext
 - All servers syntax OK, all web clients build clean
 
 ## Sprint 5 Changelog (v1.1.3)

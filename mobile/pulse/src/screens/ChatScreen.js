@@ -46,14 +46,28 @@ function groupMessagesByDate(messages) {
   return groups;
 }
 
-export default function ChatScreen({ route }) {
-  const { conversationId, name } = route.params;
+export default function ChatScreen({ route, navigation }) {
+  const { conversationId, name, peerId } = route.params;
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const flatListRef = useRef(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [showStickers, setShowStickers] = useState(false);
+  const [stickerPacks, setStickerPacks] = useState([]);
+  const [activePack, setActivePack] = useState(null);
+
+  useEffect(() => {
+    const loadStickers = async () => {
+      try {
+        const data = await api.getStickers();
+        setStickerPacks(data.packs || []);
+        if (data.packs?.length > 0) setActivePack(data.packs[0]);
+      } catch {}
+    };
+    loadStickers();
+  }, []);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -92,6 +106,23 @@ export default function ChatScreen({ route }) {
     };
     initCrypto();
   }, []);
+
+  useEffect(() => {
+    if (peerId) {
+      navigation.setOptions({
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('CallScreen', { peerId, peerName: name, callType: 'voice', isIncoming: false })} style={{ marginRight: 8 }}>
+              <Ionicons name="call" size={20} color="#0a66c2" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CallScreen', { peerId, peerName: name, callType: 'video', isIncoming: false })} style={{ marginRight: 8 }}>
+              <Ionicons name="videocam" size={20} color="#0a66c2" />
+            </TouchableOpacity>
+          </View>
+        ),
+      });
+    }
+  }, [navigation, peerId, name]);
 
   async function handleSend() {
     const content = text.trim();
@@ -157,8 +188,31 @@ export default function ChatScreen({ route }) {
         }
       />
 
+      {showStickers && (
+        <View style={styles.stickerPicker}>
+          <View style={styles.stickerPackTabs}>
+            {stickerPacks.map(pack => (
+              <TouchableOpacity key={pack.id} onPress={() => setActivePack(pack)}
+                style={[styles.stickerPackTab, activePack?.id === pack.id && styles.stickerPackTabActive]}>
+                <Text style={styles.stickerPackTabText}>{pack.icon} {pack.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <FlatList
+            data={activePack?.stickers || []}
+            numColumns={7}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => { setText(item); setShowStickers(false); }} style={styles.stickerItem}>
+                <Text style={{ fontSize: 28 }}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(_, i) => i.toString()}
+            style={styles.stickerGrid}
+          />
+        </View>
+      )}
       <View style={styles.inputBar}>
-        <TouchableOpacity style={styles.plusButton}>
+        <TouchableOpacity style={styles.plusButton} onPress={() => setShowStickers(!showStickers)}>
           <Ionicons name="add-circle" size={30} color="#0084ff" />
         </TouchableOpacity>
         <TextInput
@@ -247,5 +301,40 @@ const styles = StyleSheet.create({
     color: '#555',
     fontSize: 13,
     marginTop: 4,
+  },
+  stickerPicker: {
+    backgroundColor: '#16213e',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#2a2a4a',
+    maxHeight: 300,
+  },
+  stickerPackTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  stickerPackTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#1a1a2e',
+  },
+  stickerPackTabActive: {
+    backgroundColor: '#0084ff',
+  },
+  stickerPackTabText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  stickerGrid: {
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  stickerItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
   },
 });

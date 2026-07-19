@@ -5,6 +5,7 @@ import { io as socketIO } from 'socket.io-client';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import { init as initCrypto, getLocalIdentity, generateLocalIdentity, uploadKeyBundle, sendMessage, receiveMessage, isE2EEEnabled } from '../crypto/signalProtocol.js';
+import { initiateCall } from './CallManager';
 
 const reactionEmojis = ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDE22', '\uD83D\uDE21'];
 
@@ -255,6 +256,16 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
         >
           ⏱️
         </button>
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+          <button onClick={() => initiateCall(conversation.otherUserId, 'voice')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, padding: 4 }} title="Voice call">
+            📞
+          </button>
+          <button onClick={() => initiateCall(conversation.otherUserId, 'video')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, padding: 4 }} title="Video call">
+            📹
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: '4px 12px', fontSize: '11px', color: '#65676b', background: '#f0f2f5', textAlign: 'center' }}>

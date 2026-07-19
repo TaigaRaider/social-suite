@@ -109,4 +109,21 @@ export const api = {
   async markNotificationRead(id) {
     return request(`/api/notifications/${id}/read`, { method: 'POST' });
   },
+
+  // Stickers
+  async getStickers() {
+    return request('/api/crypto/stickers');
+  },
+
+  async getMyStickers() {
+    return request('/api/crypto/stickers/mine');
+  },
+
+  async installStickerPack(packId) {
+    return request(`/api/crypto/stickers/install/${packId}`, { method: 'POST' });
+  },
+
+  async uninstallStickerPack(packId) {
+    return request(`/api/crypto/stickers/install/${packId}`, { method: 'DELETE' });
+  },
 };

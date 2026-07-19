@@ -16,6 +16,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import DeviceManagerScreen from './src/screens/DeviceManagerScreen';
+import CallScreen from './src/screens/CallScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -105,6 +106,11 @@ function AppNavigator() {
           <RootStack.Screen
             name="DeviceManager"
             component={DeviceManagerScreen}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="CallScreen"
+            component={CallScreen}
             options={{ headerShown: false }}
           />
         </RootStack.Group>

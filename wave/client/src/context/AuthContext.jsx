@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { init as initCrypto, generateLocalIdentity, uploadKeyBundle, isE2EEEnabled } from '../crypto/signalProtocol.js';
 import { generateOneTimePreKeys } from '../crypto/keyGeneration.js';
@@ -8,6 +8,46 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const offlineQueue = useRef([]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      flushOfflineQueue();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    try {
+      const queued = JSON.parse(localStorage.getItem('offlineMessageQueue') || '[]');
+      offlineQueue.current = queued;
+    } catch {}
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const queueMessage = (message) => {
+    offlineQueue.current.push({ ...message, timestamp: Date.now() });
+    localStorage.setItem('offlineMessageQueue', JSON.stringify(offlineQueue.current));
+  };
+
+  const flushOfflineQueue = () => {
+    if (offlineQueue.current.length === 0) return;
+
+    const queue = [...offlineQueue.current];
+    offlineQueue.current = [];
+    localStorage.removeItem('offlineMessageQueue');
+
+    queue.forEach(msg => {
+      api.messages.send(msg.groupId, msg.content).catch(() => {});
+    });
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('wave_token');
@@ -90,7 +130,7 @@ export function AuthProvider({ children }) {
   const updateUser = (u) => setUser(u);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, isOnline, queueMessage }}>
       {children}
     </AuthContext.Provider>
   );

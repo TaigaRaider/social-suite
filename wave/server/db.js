@@ -413,6 +413,57 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_token ON push_tokens(token)');
   db.run('CREATE INDEX IF NOT EXISTS idx_messages_readAt ON messages(readAt)');
 
+  db.run(`CREATE TABLE IF NOT EXISTS call_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    callerId INTEGER NOT NULL,
+    receiverId INTEGER,
+    groupId INTEGER,
+    callType TEXT NOT NULL DEFAULT 'voice',
+    status TEXT NOT NULL DEFAULT 'ringing',
+    startedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    answeredAt DATETIME,
+    endedAt DATETIME,
+    duration INTEGER DEFAULT 0,
+    FOREIGN KEY(callerId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_call_sessions_caller ON call_sessions(callerId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_call_sessions_receiver ON call_sessions(receiverId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_call_sessions_status ON call_sessions(status)');
+
+  db.run(`CREATE TABLE IF NOT EXISTS sticker_packs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    icon TEXT NOT NULL,
+    stickers TEXT NOT NULL DEFAULT '[]',
+    isBuiltin INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS user_sticker_packs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    packId INTEGER NOT NULL,
+    addedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(userId, packId),
+    FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(packId) REFERENCES sticker_packs(id) ON DELETE CASCADE
+  )`);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_user_stickers ON user_sticker_packs(userId)');
+
+  const defaultPacks = [
+    { name: 'Smileys', icon: '😀', stickers: '["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😊","😇","🥰","😍","🤩","😘","😗","😚","😙","🥲","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🫡","🤐","🤨","😐","😑","😶","🫥","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🥵","🥶","🥴","😵","🤯","🤠","🥳","🥸","😎","🤓","🧐"]' },
+    { name: 'Gestures', icon: '👋', stickers: '["👋","🤚","🖐️","✋","🖖","🫱","🫲","🫳","🫴","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","🫵","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","👐","🤲","🤝","🙏"]' },
+    { name: 'Hearts', icon: '❤️', stickers: '["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝","💟","♥️","🫶","😍","🥰","😘"]' },
+    { name: 'Objects', icon: '🎉', stickers: '["🎉","🎊","🎈","🎁","🎀","🏆","🥇","⭐","🌟","💫","✨","🔥","💯","🎶","🎵","🎤","🎧","📱","💻","⌚","📷","🔑","💡","📚","✏️","📎"]' }
+  ];
+
+  defaultPacks.forEach(p => {
+    db.run(`INSERT OR IGNORE INTO sticker_packs (name, icon, stickers, isBuiltin) VALUES (?, ?, ?, 1)`, [p.name, p.icon, p.stickers]);
+  });
+
   process.on('SIGINT', () => { flushDB(); process.exit(0); });
   process.on('SIGTERM', () => { flushDB(); process.exit(0); });
 

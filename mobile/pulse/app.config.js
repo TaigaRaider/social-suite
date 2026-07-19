@@ -3,7 +3,7 @@ export default {
     name: "Pulse",
     slug: "pulse",
     owner: "tatatis-team",
-    version: "1.1.3",
+    version: "1.1.4",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",

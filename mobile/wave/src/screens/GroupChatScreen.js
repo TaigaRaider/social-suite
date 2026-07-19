@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import MessageBubble from '../components/MessageBubble';
 import { loadIdentity, generateLocalIdentity, uploadKeyBundle, sendMessage as sendEncrypted, isE2EEEnabled } from '../crypto/signalProtocol';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function GroupChatScreen({ route, navigation }) {
   const { groupId, groupName } = route.params;
@@ -16,7 +17,21 @@ export default function GroupChatScreen({ route, navigation }) {
   const [memberCount, setMemberCount] = useState(0);
   const [showMemberList, setShowMemberList] = useState(false);
   const [members, setMembers] = useState([]);
+  const [showStickers, setShowStickers] = useState(false);
+  const [stickerPacks, setStickerPacks] = useState([]);
+  const [activePack, setActivePack] = useState(null);
   const flatListRef = useRef(null);
+
+  useEffect(() => {
+    const loadStickers = async () => {
+      try {
+        const data = await api.getStickers(token);
+        setStickerPacks(data.packs || []);
+        if (data.packs?.length > 0) setActivePack(data.packs[0]);
+      } catch {}
+    };
+    if (token) loadStickers();
+  }, [token]);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -109,6 +124,12 @@ export default function GroupChatScreen({ route, navigation }) {
       ),
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.navigate('CallScreen', { peerId: groupId, peerName: groupName, callType: 'voice', isIncoming: false })} style={{ marginRight: 8 }}>
+            <Ionicons name="call" size={20} color="#00a884" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('CallScreen', { peerId: groupId, peerName: groupName, callType: 'video', isIncoming: false })} style={{ marginRight: 8 }}>
+            <Ionicons name="videocam" size={20} color="#00a884" />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => { setShowMemberList(true); loadDetailedMembers(); }}
             style={styles.membersBtn}
@@ -164,7 +185,33 @@ export default function GroupChatScreen({ route, navigation }) {
         contentContainerStyle={styles.messagesList}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
       />
+      {showStickers && (
+        <View style={styles.stickerPicker}>
+          <View style={styles.stickerPackTabs}>
+            {stickerPacks.map(pack => (
+              <TouchableOpacity key={pack.id} onPress={() => setActivePack(pack)}
+                style={[styles.stickerPackTab, activePack?.id === pack.id && styles.stickerPackTabActive]}>
+                <Text style={styles.stickerPackTabText}>{pack.icon} {pack.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <FlatList
+            data={activePack?.stickers || []}
+            numColumns={7}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => { setText(item); setShowStickers(false); }} style={styles.stickerItem}>
+                <Text style={{ fontSize: 28 }}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(_, i) => i.toString()}
+            style={styles.stickerGrid}
+          />
+        </View>
+      )}
       <View style={styles.inputBar}>
+        <TouchableOpacity onPress={() => setShowStickers(!showStickers)} style={styles.stickerBtn}>
+          <Text style={{ fontSize: 22 }}>😊</Text>
+        </TouchableOpacity>
         <TextInput
           style={styles.textInput}
           value={text}
@@ -273,4 +320,43 @@ const styles = StyleSheet.create({
   memberActions: { flexDirection: 'row', gap: 8 },
   memberActionBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   memberActionText: { color: '#00a884', fontSize: 13, fontWeight: '600' },
+  stickerPicker: {
+    backgroundColor: '#1f2c33',
+    borderTopWidth: 1,
+    borderTopColor: '#222d34',
+    maxHeight: 300,
+  },
+  stickerPackTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  stickerPackTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#2a3942',
+  },
+  stickerPackTabActive: {
+    backgroundColor: '#00a884',
+  },
+  stickerPackTabText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  stickerGrid: {
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  stickerItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
+  },
+  stickerBtn: {
+    paddingBottom: 6,
+    marginRight: 4,
+  },
 });

@@ -385,6 +385,67 @@ export function setupWebSocket(server) {
 
       run('UPDATE notifications SET read = 1 WHERE userId = ?', [userId]);
     });
+
+    // Call signaling
+    socket.on('call:initiate', ({ receiverId, callType, sessionId }) => {
+      const userId = socket.userId;
+      if (!userId || !receiverId) return;
+
+      io.to(`user_${receiverId}`).emit('call:incoming', {
+        sessionId,
+        callerId: userId,
+        callType: callType || 'voice'
+      });
+    });
+
+    socket.on('call:answer', ({ sessionId, receiverId }) => {
+      io.to(`user_${receiverId}`).emit('call:answered', { sessionId });
+    });
+
+    socket.on('call:reject', ({ sessionId, callerId }) => {
+      io.to(`user_${callerId}`).emit('call:rejected', { sessionId });
+    });
+
+    socket.on('call:end', ({ sessionId, otherUserId }) => {
+      io.to(`user_${otherUserId}`).emit('call:ended', { sessionId });
+    });
+
+    // WebRTC signaling relay
+    socket.on('call:offer', ({ sessionId, toUserId, offer }) => {
+      io.to(`user_${toUserId}`).emit('call:offer', {
+        sessionId,
+        fromUserId: socket.userId,
+        offer
+      });
+    });
+
+    socket.on('call:answer-signal', ({ sessionId, toUserId, answer }) => {
+      io.to(`user_${toUserId}`).emit('call:answer-signal', {
+        sessionId,
+        fromUserId: socket.userId,
+        answer
+      });
+    });
+
+    socket.on('call:ice-candidate', ({ sessionId, toUserId, candidate }) => {
+      io.to(`user_${toUserId}`).emit('call:ice-candidate', {
+        sessionId,
+        fromUserId: socket.userId,
+        candidate
+      });
+    });
+
+    socket.on('call:mute', ({ sessionId, toUserId, muted }) => {
+      io.to(`user_${toUserId}`).emit('call:mute', { sessionId, muted });
+    });
+
+    socket.on('call:video-toggle', ({ sessionId, toUserId, enabled }) => {
+      io.to(`user_${toUserId}`).emit('call:video-toggle', { sessionId, enabled });
+    });
+
+    socket.on('call:screen-share', ({ sessionId, toUserId, sharing }) => {
+      io.to(`user_${toUserId}`).emit('call:screen-share', { sessionId, sharing });
+    });
   });
 
   return io;

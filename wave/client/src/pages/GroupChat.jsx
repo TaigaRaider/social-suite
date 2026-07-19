@@ -6,6 +6,7 @@ import { init as initCrypto, generateLocalIdentity, uploadKeyBundle, sendMessage
 import MessageBubble from '../components/MessageBubble';
 import ChatInput from '../components/ChatInput';
 import MemberList from '../components/MemberList';
+import { initiateCall } from '../components/CallManager';
 
 const reactionEmojis = ['\u2764\uFE0F', '\uD83D\uDC4D', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDE22', '\uD83D\uDE21'];
 
@@ -248,6 +249,14 @@ export default function GroupChat({ groupId, onBack }) {
           )}
         </div>
         <div className="chat-header-actions">
+          <button onClick={() => initiateCall(groupId, 'voice')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, padding: 4 }} title="Voice call group">
+            📞
+          </button>
+          <button onClick={() => initiateCall(groupId, 'video')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, padding: 4 }} title="Video call group">
+            📹
+          </button>
           <button onClick={() => { setShowMemberList(!showMemberList); loadMembers(); }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }} title="Members">
             &#128101;

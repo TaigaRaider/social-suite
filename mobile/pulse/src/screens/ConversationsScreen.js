@@ -68,6 +68,7 @@ export default function ConversationsScreen({ navigation }) {
     navigation.navigate('Chat', {
       conversationId: conversation.id || conversation._id,
       name: conversation.name,
+      peerId: conversation.otherUserId,
     });
   }
 

@@ -45,4 +45,9 @@ export const api = {
   updateGroupSettings: (groupId, settings, token) => request(`/crypto/groups/${groupId}/settings`, { method: 'PUT', body: JSON.stringify(settings), token }),
   leaveGroup: (groupId, token) => request(`/crypto/groups/${groupId}/leave`, { method: 'POST', token }),
   transferGroupOwnership: (groupId, newOwnerId, token) => request(`/crypto/groups/${groupId}/transfer`, { method: 'PUT', body: JSON.stringify({ newOwnerId }), token }),
+
+  getStickers: (token) => request('/crypto/stickers', { token }),
+  getMyStickers: (token) => request('/crypto/stickers/mine', { token }),
+  installStickerPack: (packId, token) => request(`/crypto/stickers/install/${packId}`, { method: 'POST', token }),
+  uninstallStickerPack: (packId, token) => request(`/crypto/stickers/install/${packId}`, { method: 'DELETE', token }),
 };

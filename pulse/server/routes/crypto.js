@@ -602,4 +602,135 @@ router.get('/messages/:messageId/status', auth, (req, res) => {
   }
 });
 
+// Initiate a call
+router.post('/calls/initiate', auth, (req, res) => {
+  try {
+    const { receiverId, groupId, callType } = req.body;
+
+    const session = run(`INSERT INTO call_sessions (callerId, receiverId, groupId, callType, status, startedAt)
+      VALUES (?, ?, ?, ?, 'ringing', datetime('now'))`,
+      [req.userId, receiverId || null, groupId || null, callType || 'voice']);
+
+    saveDB();
+    res.json({ success: true, sessionId: session.lastId });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to initiate call' });
+  }
+});
+
+// Answer a call
+router.post('/calls/:sessionId/answer', auth, (req, res) => {
+  try {
+    const sessionId = parseInt(req.params.sessionId);
+    run("UPDATE call_sessions SET status = 'active', answeredAt = datetime('now') WHERE id = ?", [sessionId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to answer call' });
+  }
+});
+
+// End a call
+router.post('/calls/:sessionId/end', auth, (req, res) => {
+  try {
+    const sessionId = parseInt(req.params.sessionId);
+    const { reason } = req.body;
+
+    const session = queryOne('SELECT * FROM call_sessions WHERE id = ?', [sessionId]);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    const duration = session.answeredAt
+      ? Math.floor((Date.now() - new Date(session.answeredAt).getTime()) / 1000)
+      : 0;
+
+    run("UPDATE call_sessions SET status = 'ended', endedAt = datetime('now'), duration = ? WHERE id = ?",
+      [duration, sessionId]);
+
+    saveDB();
+    res.json({ success: true, duration });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to end call' });
+  }
+});
+
+// Reject a call
+router.post('/calls/:sessionId/reject', auth, (req, res) => {
+  try {
+    const sessionId = parseInt(req.params.sessionId);
+    run("UPDATE call_sessions SET status = 'rejected', endedAt = datetime('now') WHERE id = ?", [sessionId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reject call' });
+  }
+});
+
+// Get call history
+router.get('/calls/history', auth, (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const calls = query(
+      `SELECT c.*, u.username as callerName FROM call_sessions c
+       JOIN users u ON c.callerId = u.id
+       WHERE c.callerId = ? OR c.receiverId = ?
+       ORDER BY c.startedAt DESC LIMIT ?`,
+      [req.userId, req.userId, limit]
+    );
+    res.json({ calls });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get call history' });
+  }
+});
+
+// Get all sticker packs
+router.get('/stickers', auth, (req, res) => {
+  try {
+    const packs = query('SELECT * FROM sticker_packs ORDER BY isBuiltin DESC, name ASC');
+    const parsed = packs.map(p => ({ ...p, stickers: JSON.parse(p.stickers || '[]') }));
+    res.json({ packs: parsed });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get stickers' });
+  }
+});
+
+// Get user's installed sticker packs
+router.get('/stickers/mine', auth, (req, res) => {
+  try {
+    const packs = query(
+      `SELECT sp.* FROM sticker_packs sp 
+       JOIN user_sticker_packs us ON sp.id = us.packId 
+       WHERE us.userId = ? ORDER BY us.addedAt DESC`,
+      [req.userId]
+    );
+    const parsed = packs.map(p => ({ ...p, stickers: JSON.parse(p.stickers || '[]') }));
+    res.json({ packs: parsed });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get user stickers' });
+  }
+});
+
+// Install a sticker pack
+router.post('/stickers/install/:packId', auth, (req, res) => {
+  try {
+    const packId = parseInt(req.params.packId);
+    run('INSERT OR IGNORE INTO user_sticker_packs (userId, packId, addedAt) VALUES (?, ?, datetime(\'now\'))', [req.userId, packId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to install pack' });
+  }
+});
+
+// Uninstall a sticker pack
+router.delete('/stickers/install/:packId', auth, (req, res) => {
+  try {
+    const packId = parseInt(req.params.packId);
+    run('DELETE FROM user_sticker_packs WHERE userId = ? AND packId = ?', [req.userId, packId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to uninstall pack' });
+  }
+});
+
 export default router;

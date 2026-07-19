@@ -4,12 +4,14 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import useOnlineStatus from './hooks/useOnlineStatus';
+import { io as socketIO } from 'socket.io-client';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ChatList from './pages/ChatList';
 import Onboarding from './components/Onboarding';
 import Splash from './components/Splash';
 import DeviceManager from './components/DeviceManager';
+import CallManager from './components/CallManager';
 import { api } from './api';
 import './App.css';
 
@@ -36,11 +38,30 @@ function OnboardingGate({ children }) {
 function AppInner() {
   useKeyboardShortcuts();
   useOnlineStatus();
+  const { user } = useAuth();
+  const [appSocket, setAppSocket] = useState(null);
+
+  useEffect(() => {
+    if (!user) {
+      setAppSocket(null);
+      return;
+    }
+    const token = localStorage.getItem('pulse_token');
+    if (!token) return;
+    const socket = socketIO('http://localhost:3003', { auth: { token } });
+    setAppSocket(socket);
+    return () => {
+      socket.disconnect();
+      setAppSocket(null);
+    };
+  }, [user]);
+
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
           <OnboardingGate>
+            {appSocket && <CallManager socket={appSocket} user={user} />}
             <Routes>
               <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
               <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
