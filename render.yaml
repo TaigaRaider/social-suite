@@ -10,9 +10,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true
+        value: ba1a252b519dbe704665c7e575d08f238cce85eebecab91a5faa1abce328dd1d
       - key: CORS_ORIGIN
-        sync: false
+        value: https://nexus-web.onrender.com
       - key: PORT
         value: 3001
     healthCheckPath: /api/health
@@ -27,9 +27,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true
+        value: ba1a252b519dbe704665c7e575d08f238cce85eebecab91a5faa1abce328dd1d
       - key: CORS_ORIGIN
-        sync: false
+        value: https://lumina-web.onrender.com
       - key: PORT
         value: 3002
     healthCheckPath: /api/health
@@ -44,9 +44,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true
+        value: ba1a252b519dbe704665c7e575d08f238cce85eebecab91a5faa1abce328dd1d
       - key: CORS_ORIGIN
-        sync: false
+        value: https://pulse-web.onrender.com
       - key: PORT
         value: 3003
     healthCheckPath: /api/health
@@ -61,9 +61,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true
+        value: ba1a252b519dbe704665c7e575d08f238cce85eebecab91a5faa1abce328dd1d
       - key: CORS_ORIGIN
-        sync: false
+        value: https://wave-web.onrender.com
       - key: PORT
         value: 3004
     healthCheckPath: /api/health
@@ -78,9 +78,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true
+        value: ba1a252b519dbe704665c7e575d08f238cce85eebecab91a5faa1abce328dd1d
       - key: CORS_ORIGIN
-        sync: false
+        value: https://whisper-web.onrender.com
       - key: PORT
         value: 3005
     healthCheckPath: /api/health
@@ -93,7 +93,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://nexus-api.onrender.com/api
 
   - type: static_site
     name: lumina-web
@@ -102,7 +102,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://lumina-api.onrender.com/api
 
   - type: static_site
     name: pulse-web
@@ -111,7 +111,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://pulse-api.onrender.com/api
 
   - type: static_site
     name: wave-web
@@ -120,7 +120,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://wave-api.onrender.com/api
 
   - type: static_site
     name: whisper-web
@@ -129,4 +129,4 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://whisper-api.onrender.com/api
