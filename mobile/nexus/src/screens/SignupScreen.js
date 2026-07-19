@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   signupBtn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     borderRadius: 8,
     padding: 14,
     alignItems: 'center',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   loginLinkText: {
-    color: '#1877f2',
+    color: '#475569',
     fontSize: 15,
     fontWeight: '500',
   },

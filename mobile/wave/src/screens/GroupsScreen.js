@@ -49,6 +49,9 @@ export default function GroupsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Wave</Text>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('ContactImporter')}>
+          <Ionicons name="people-outline" size={22} color="#e9edef" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('DeviceManager')}>
           <Ionicons name="phone-portrait-outline" size={22} color="#e9edef" />
         </TouchableOpacity>

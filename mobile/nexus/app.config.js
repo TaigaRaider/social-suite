@@ -3,14 +3,14 @@ export default {
     name: "Facebook",
     slug: "facebook",
     owner: "tatatis-team",
-    version: "1.1.5",
+    version: "1.1.6",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
-      backgroundColor: "#1877f2"
+      backgroundColor: "#475569"
     },
     assetBundlePatterns: ["**/*"],
     ios: {
@@ -21,7 +21,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#1877f2"
+        backgroundColor: "#475569"
       },
       package: "com.socialsuite.facebook",
       versionCode: 1,

@@ -29,7 +29,7 @@ export default function ProfileCompletion() {
         <button onClick={() => { localStorage.setItem(DISMISS_KEY, 'true'); setDismissed(true); }} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #8696a0)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>&#10005;</button>
       </div>
       <div style={{ height: 6, background: 'var(--border, #222d34)', borderRadius: 3, marginBottom: 12, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent, #00a884)', borderRadius: 3, transition: 'width 0.3s' }} />
+        <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent, #059669)', borderRadius: 3, transition: 'width 0.3s' }} />
       </div>
       <div style={{ fontSize: 12, color: 'var(--text-muted, #8696a0)', marginBottom: 10 }}>{pct}% complete</div>
       {items.map((item, i) => (

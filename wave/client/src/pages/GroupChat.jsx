@@ -272,7 +272,7 @@ export default function GroupChat({ groupId, onBack }) {
         </div>
       </div>
 
-      <div style={{ padding: '4px 12px', fontSize: '11px', color: '#65676b', background: '#f0f2f5', textAlign: 'center' }}>
+      <div style={{ padding: '4px 12px', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--surface-secondary)', textAlign: 'center' }}>
         🔒 Messages are end-to-end encrypted. No one outside this chat can read them.
       </div>
 
@@ -294,7 +294,7 @@ export default function GroupChat({ groupId, onBack }) {
                     showSender={showSender}
                   />
                   {isSent && (
-                    <span style={{ fontSize: 11, color: msg.readAt ? '#0a66c2' : msg.deliveredAt ? '#65676b' : '#999', marginLeft: 4 }}>
+                    <span style={{ fontSize: 11, color: msg.readAt ? '#059669' : msg.deliveredAt ? 'var(--text-muted)' : 'var(--text-muted)', marginLeft: 4 }}>
                       {msg.readAt ? '\u2713\u2713 Read' : msg.deliveredAt ? '\u2713 Delivered' : '\u2713 Sent'}
                     </span>
                   )}
@@ -315,7 +315,7 @@ export default function GroupChat({ groupId, onBack }) {
                   {messageReactions[msg.id]?.length > 0 && (
                     <div style={{ display: 'flex', gap: '2px', marginTop: '2px', paddingLeft: isSent ? 0 : '12px', paddingRight: isSent ? '12px' : 0 }}>
                       {[...new Set(messageReactions[msg.id].map(r => r.emoji))].map(emoji => (
-                        <span key={emoji} style={{ background: '#f0f2f5', borderRadius: '10px', padding: '2px 6px', fontSize: '12px', cursor: 'pointer' }}
+                        <span key={emoji} style={{ background: 'var(--surface-secondary)', borderRadius: '10px', padding: '2px 6px', fontSize: '12px', cursor: 'pointer' }}
                           onClick={() => socketRef.current?.emit('reaction:remove', { messageId: msg.id, emoji, groupId })}>
                           {emoji} {messageReactions[msg.id].filter(r => r.emoji === emoji).length}
                         </span>
@@ -369,7 +369,7 @@ export default function GroupChat({ groupId, onBack }) {
                   <div style={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {m.firstName} {m.lastName} {m.role === 'owner' ? '&#128081;' : m.role === 'admin' ? '&#11088;' : ''}
                   </div>
-                  <div style={{ fontSize: 12, color: '#65676b' }}>@{m.username}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>@{m.username}</div>
                 </div>
                 {isGroupAdmin && m.userId !== user?.id && (
                   <div style={{ display: 'flex', gap: 4 }}>

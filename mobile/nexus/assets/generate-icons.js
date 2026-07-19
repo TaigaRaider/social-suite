@@ -13,7 +13,7 @@ const sizes = {
   'notification-icon.png': 96
 };
 
-const svg = (size, bg = '#1877f2', text = 'f') => `
+const svg = (size, bg = '#475569', text = 'f') => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="${size}" height="${size}" fill="${bg}"/>
   <text x="50%" y="54%" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="${size * 0.5}" dy=".35em">${text}</text>

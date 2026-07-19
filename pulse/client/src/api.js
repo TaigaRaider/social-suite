@@ -75,5 +75,12 @@ export const api = {
     getMyStickers: () => request('/crypto/stickers/mine'),
     installStickerPack: (packId) => request(`/crypto/stickers/install/${packId}`, { method: 'POST' }),
     uninstallStickerPack: (packId) => request(`/crypto/stickers/install/${packId}`, { method: 'DELETE' }),
+    importContacts: (contacts) => request('/crypto/contacts/import', { method: 'POST', body: JSON.stringify({ contacts }) }),
+    getContacts: () => request('/crypto/contacts'),
+    syncContacts: () => request('/crypto/contacts/sync', { method: 'POST' }),
+    deleteContact: (id) => request(`/crypto/contacts/${id}`, { method: 'DELETE' }),
+    searchMessages: (q, limit = 20) => request(`/crypto/search/messages?q=${encodeURIComponent(q)}&limit=${limit}`),
+    searchUsers: (q, limit = 20) => request(`/crypto/search/users?q=${encodeURIComponent(q)}&limit=${limit}`),
+    searchConversations: (q, limit = 20) => request(`/crypto/search/conversations?q=${encodeURIComponent(q)}&limit=${limit}`),
   },
 };

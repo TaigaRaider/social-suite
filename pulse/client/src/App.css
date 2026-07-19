@@ -6,45 +6,74 @@
   box-sizing: border-box;
 }
 
-:root, [data-theme="dark"] {
-  --bg-primary: #0a0a1a;
-  --bg-secondary: #111128;
-  --bg-tertiary: #1a1a3e;
-  --bg-hover: #1e1e4a;
-  --bg-active: #252560;
-  --blue-primary: #0084ff;
-  --blue-secondary: #00c6ff;
-  --blue-gradient: linear-gradient(135deg, #0084ff, #00c6ff);
-  --blue-glow: rgba(0, 132, 255, 0.3);
-  --text-primary: #e8e8f0;
-  --text-secondary: #8888aa;
-  --text-muted: #555577;
-  --border-color: #1e1e44;
-  --bubble-sent: linear-gradient(135deg, #0084ff, #0066cc);
-  --bubble-received: #1e1e44;
-  --online-green: #00e676;
-  --danger: #ff4466;
+:root {
+  --primary: #475569;
+  --primary-hover: #334155;
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+}
+
+[data-theme="dark"] {
+  --primary: #475569;
+  --primary-hover: #334155;
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-secondary: #334155;
+  --border: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface);
+  --bg-tertiary: var(--surface-secondary);
+  --bg-hover: #3b4a5e;
+  --bg-active: #475569;
+  --blue-primary: var(--accent);
+  --blue-secondary: #a78bfa;
+  --blue-gradient: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  --blue-glow: rgba(139, 92, 246, 0.3);
+  --bubble-sent: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  --bubble-received: var(--surface-secondary);
+  --online-green: #10b981;
+  --border-color: var(--border);
   --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="light"] {
-  --bg-primary: #f0f2f5;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #e4e6eb;
-  --bg-hover: #d8dadf;
-  --bg-active: #cdd0d5;
-  --blue-primary: #0084ff;
-  --blue-secondary: #00c6ff;
-  --blue-gradient: linear-gradient(135deg, #0084ff, #0066cc);
-  --blue-glow: rgba(0, 132, 255, 0.2);
-  --text-primary: #1c1e21;
-  --text-secondary: #65676b;
-  --text-muted: #8a8d91;
-  --border-color: #dadde1;
-  --bubble-sent: linear-gradient(135deg, #0084ff, #0066cc);
-  --bubble-received: #e4e6eb;
-  --online-green: #00c853;
-  --danger: #ff4466;
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface);
+  --bg-tertiary: var(--surface-secondary);
+  --bg-hover: #e2e8f0;
+  --bg-active: #cbd5e1;
+  --blue-primary: var(--accent);
+  --blue-secondary: #a78bfa;
+  --blue-gradient: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  --blue-glow: rgba(139, 92, 246, 0.2);
+  --text-primary: var(--text-primary);
+  --text-secondary: var(--text-secondary);
+  --text-muted: var(--text-muted);
+  --border-color: var(--border);
+  --bubble-sent: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  --bubble-received: var(--surface-secondary);
+  --online-green: #10b981;
+  --danger: var(--danger);
   --shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -95,8 +124,8 @@ input, textarea, button {
   min-height: 100vh;
   background: var(--bg-primary);
   background-image: 
-    radial-gradient(ellipse at 20% 50%, rgba(0, 132, 255, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 50%, rgba(0, 198, 255, 0.06) 0%, transparent 60%);
+    radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
 }
 
 .auth-card {
@@ -106,7 +135,7 @@ input, textarea, button {
   background: var(--bg-secondary);
   border-radius: 20px;
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow), 0 0 80px rgba(0, 132, 255, 0.05);
+  box-shadow: var(--shadow), 0 0 80px rgba(139, 92, 246, 0.05);
 }
 
 .auth-logo {
@@ -994,7 +1023,7 @@ input, textarea, button {
   background: var(--bg-secondary);
   border-radius: 16px;
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow), 0 0 80px rgba(0, 132, 255, 0.1);
+  box-shadow: var(--shadow), 0 0 80px rgba(139, 92, 246, 0.1);
   display: flex;
   flex-direction: column;
   animation: slideUp 0.2s ease-out;

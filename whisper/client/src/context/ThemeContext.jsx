@@ -3,29 +3,29 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext(null);
 
 const darkVars = {
-  '--bg-primary': '#181818',
-  '--bg-secondary': '#262626',
-  '--bg-tertiary': '#363636',
-  '--text-primary': '#f5f5f5',
-  '--text-secondary': '#a0a0a0',
-  '--text-tertiary': '#666666',
-  '--border': '#363636',
-  '--accent': '#f5f5f5',
+  '--bg-primary': '#0f172a',
+  '--bg-secondary': '#1e293b',
+  '--bg-tertiary': '#334155',
+  '--text-primary': '#f1f5f9',
+  '--text-secondary': '#94a3b8',
+  '--text-tertiary': '#64748b',
+  '--border': '#475569',
+  '--accent': '#d97706',
   '--hover-bg': 'rgba(255, 255, 255, 0.03)',
-  '--page-header-bg': 'rgba(24, 24, 24, 0.85)',
+  '--page-header-bg': 'rgba(15, 23, 42, 0.85)',
 };
 
 const lightVars = {
-  '--bg-primary': '#ffffff',
-  '--bg-secondary': '#f5f5f5',
-  '--bg-tertiary': '#e5e5e5',
-  '--text-primary': '#181818',
-  '--text-secondary': '#555555',
-  '--text-tertiary': '#999999',
-  '--border': '#e0e0e0',
-  '--accent': '#181818',
+  '--bg-primary': '#f8fafc',
+  '--bg-secondary': '#ffffff',
+  '--bg-tertiary': '#f1f5f9',
+  '--text-primary': '#0f172a',
+  '--text-secondary': '#64748b',
+  '--text-tertiary': '#94a3b8',
+  '--border': '#e2e8f0',
+  '--accent': '#d97706',
   '--hover-bg': 'rgba(0, 0, 0, 0.03)',
-  '--page-header-bg': 'rgba(255, 255, 255, 0.85)',
+  '--page-header-bg': 'rgba(248, 250, 252, 0.85)',
 };
 
 export function ThemeProvider({ children }) {

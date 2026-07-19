@@ -21,6 +21,8 @@ export default function Home() {
   const [messageSearchResults, setMessageSearchResults] = useState([]);
   const [messageSearchLoading, setMessageSearchLoading] = useState(false);
   const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [searchMode, setSearchMode] = useState('groups');
+  const [searchResults, setSearchResults] = useState([]);
   const messageSearchTimerRef = useRef(null);
 
   useEffect(() => {
@@ -66,16 +68,29 @@ export default function Home() {
     if (messageSearchTimerRef.current) clearTimeout(messageSearchTimerRef.current);
     if (!value.trim()) {
       setMessageSearchResults([]);
+      setSearchResults([]);
       setMessageSearchLoading(false);
       return;
     }
     setMessageSearchLoading(true);
     messageSearchTimerRef.current = setTimeout(async () => {
       try {
-        const results = await api.messages.search(value.trim());
-        setMessageSearchResults(results);
+        if (searchMode === 'messages') {
+          const data = await api.crypto.searchMessages(value.trim());
+          setMessageSearchResults(data.messages || []);
+          setSearchResults(data.messages || []);
+        } else if (searchMode === 'users') {
+          const data = await api.crypto.searchUsers(value.trim());
+          setMessageSearchResults(data.users || []);
+          setSearchResults(data.users || []);
+        } else {
+          const data = await api.crypto.searchGroups(value.trim());
+          setMessageSearchResults(data.groups || []);
+          setSearchResults(data.groups || []);
+        }
       } catch {
         setMessageSearchResults([]);
+        setSearchResults([]);
       } finally {
         setMessageSearchLoading(false);
       }
@@ -103,42 +118,39 @@ export default function Home() {
         <Navbar user={user} onLogout={logout} unreadCount={unreadCount} />
 
         <div style={{ display: 'flex', padding: '8px 12px 0', gap: 4 }}>
-          <button
-            style={{
-              flex: 1,
-              background: showMessageSearch ? 'var(--accent)' : 'var(--bg-input)',
-              color: showMessageSearch ? 'white' : 'var(--text-secondary)',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: 13,
-              fontFamily: 'inherit',
-              transition: 'all 0.2s'
-            }}
-            onClick={() => { setShowMessageSearch(true); }}
-          >
-            Search Messages
-          </button>
-          <button
-            style={{
-              flex: 1,
-              background: !showMessageSearch ? 'var(--accent)' : 'var(--bg-input)',
-              color: !showMessageSearch ? 'white' : 'var(--text-secondary)',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: 13,
-              fontFamily: 'inherit',
-              transition: 'all 0.2s'
-            }}
-            onClick={() => { setShowMessageSearch(false); setMessageSearchQuery(''); setMessageSearchResults([]); }}
-          >
-            Groups
-          </button>
+          {['groups', 'messages', 'users'].map(mode => (
+            <button
+              key={mode}
+              style={{
+                flex: 1,
+                background: showMessageSearch && searchMode === mode ? 'var(--accent)' : (!showMessageSearch && mode === 'groups') ? 'var(--accent)' : 'var(--bg-input)',
+                color: (showMessageSearch && searchMode === mode) || (!showMessageSearch && mode === 'groups') ? 'white' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 12px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: 13,
+                fontFamily: 'inherit',
+                textTransform: 'capitalize',
+                transition: 'all 0.2s'
+              }}
+              onClick={() => {
+                if (mode === 'groups') {
+                  setShowMessageSearch(false);
+                  setMessageSearchQuery('');
+                  setMessageSearchResults([]);
+                  setSearchResults([]);
+                } else {
+                  setSearchMode(mode);
+                  setShowMessageSearch(true);
+                  if (messageSearchQuery) handleMessageSearch(messageSearchQuery);
+                }
+              }}
+            >
+              {mode}
+            </button>
+          ))}
         </div>
 
         {showMessageSearch ? (
@@ -159,32 +171,57 @@ export default function Home() {
               {messageSearchQuery.trim() && (
                 messageSearchLoading ? (
                   <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Searching...</div>
-                ) : messageSearchResults.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>No messages found</div>
+                ) : searchResults.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>No results found</div>
                 ) : (
-                  messageSearchResults.map(result => {
-                    const name = result.senderFirstName || result.senderLastName
-                      ? `${result.senderFirstName || ''} ${result.senderLastName || ''}`.trim()
-                      : result.senderName;
-                    return (
-                      <div key={result.id} className="group-list-item" onClick={() => handleSearchResultClick(result)} style={{ cursor: 'pointer' }}>
+                  searchMode === 'users' ? (
+                    searchResults.map(r => (
+                      <div key={r.id} className="group-list-item" style={{ cursor: 'pointer' }}>
                         <div className="group-avatar" style={{ background: 'var(--accent-dark)' }}>
-                          {result.groupName?.charAt(0)?.toUpperCase() || '?'}
+                          {(r.firstName?.[0] || r.username?.[0] || '?').toUpperCase()}
                         </div>
                         <div className="group-info">
-                          <div className="group-name">{result.groupName}</div>
+                          <div className="group-name">{r.firstName} {r.lastName}</div>
+                          <div className="group-meta">
+                            <span className="last-message">@{r.username}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : searchMode === 'messages' ? (
+                    searchResults.map(r => (
+                      <div key={r.id} className="group-list-item" onClick={() => { if (r.groupId) navigate(`/group/${r.groupId}`); setShowMessageSearch(false); setMessageSearchQuery(''); setSearchResults([]); }} style={{ cursor: 'pointer' }}>
+                        <div className="group-avatar" style={{ background: 'var(--accent-dark)' }}>
+                          {r.groupName?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div className="group-info">
+                          <div className="group-name">{r.groupName}</div>
                           <div className="group-meta">
                             <span className="last-message" style={{ fontSize: 12 }}>
-                              <strong>{name}:</strong> {result.content}
+                              <strong>{r.firstName} {r.lastName}:</strong> {r.content}
                             </span>
                           </div>
                         </div>
                         <div className="group-right">
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatResultTime(result.createdAt)}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatResultTime(r.createdAt)}</span>
                         </div>
                       </div>
-                    );
-                  })
+                    ))
+                  ) : (
+                    searchResults.map(r => (
+                      <div key={r.id} className="group-list-item" onClick={() => handleGroupClick(r.id)} style={{ cursor: 'pointer' }}>
+                        <div className="group-avatar" style={{ background: 'var(--accent-dark)' }}>
+                          {r.name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div className="group-info">
+                          <div className="group-name">{r.name}</div>
+                          <div className="group-meta">
+                            <span className="last-message" style={{ fontSize: 12 }}>{r.description || 'No description'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )
                 )
               )}
             </div>

@@ -220,7 +220,7 @@ export default function FriendsScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#1877f2" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#475569" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={data}
@@ -238,7 +238,7 @@ export default function FriendsScreen({ navigation }) {
             </View>
           }
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1877f2" colors={['#1877f2']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#475569" colors={['#475569']} />
           }
           contentContainerStyle={data.length === 0 ? styles.emptyList : styles.list}
         />
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 3,
-    borderBottomColor: '#1877f2',
+    borderBottomColor: '#475569',
   },
   tabText: {
     fontSize: 14,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     color: '#65676b',
   },
   activeTabText: {
-    color: '#1877f2',
+    color: '#475569',
   },
   badge: {
     color: '#f02849',
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   acceptBtn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     borderRadius: 6,
     paddingVertical: 6,
     paddingHorizontal: 16,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   addBtn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     borderRadius: 6,
     paddingVertical: 6,
     paddingHorizontal: 16,

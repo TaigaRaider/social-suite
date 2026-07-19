@@ -271,7 +271,7 @@ export default function ProfileScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1877f2" />
+        <ActivityIndicator size="large" color="#475569" />
       </View>
     );
   }
@@ -291,7 +291,7 @@ export default function ProfileScreen({ route, navigation }) {
           </View>
         }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1877f2" colors={['#1877f2']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#475569" colors={['#475569']} />
         }
         contentContainerStyle={posts.length === 0 ? styles.emptyList : styles.list}
       />
@@ -305,7 +305,7 @@ export default function ProfileScreen({ route, navigation }) {
             <Text style={styles.modalTitle}>Edit Profile</Text>
             <TouchableOpacity onPress={handleSaveProfile} disabled={saving}>
               {saving ? (
-                <ActivityIndicator size="small" color="#1877f2" />
+                <ActivityIndicator size="small" color="#475569" />
               ) : (
                 <Text style={styles.modalSave}>Save</Text>
               )}
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   friendBtn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     borderRadius: 6,
     paddingVertical: 8,
     paddingHorizontal: 20,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   unfriendBtnText: {
-    color: '#1877f2',
+    color: '#475569',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   },
   modalSave: {
     fontSize: 16,
-    color: '#1877f2',
+    color: '#475569',
     fontWeight: '600',
   },
   modalBody: {

@@ -73,21 +73,21 @@ export default function Navbar({ user, onLogout, unreadCount = 0 }) {
                   <span style={{ fontWeight: 600, fontSize: 15 }}>Notifications</span>
                   {cryptoUnreadCount > 0 && (
                     <button onClick={async () => { await api.crypto.markAllNotificationsRead(); loadNotifications(); }}
-                      style={{ background: 'none', border: 'none', color: '#0a66c2', cursor: 'pointer', fontSize: 13 }}>
+                      style={{ background: 'none', border: 'none', color: '#059669', cursor: 'pointer', fontSize: 13 }}>
                       Mark all read
                     </button>
                   )}
                 </div>
                 <div style={{ overflowY: 'auto', maxHeight: 400 }}>
                   {notifications.length === 0 ? (
-                    <div style={{ padding: 32, textAlign: 'center', color: '#65676b', fontSize: 14 }}>No notifications</div>
+                    <div style={{ padding: 32, textAlign: 'center', color: '#64748b', fontSize: 14 }}>No notifications</div>
                   ) : (
                     notifications.slice(0, 20).map(n => (
-                      <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: n.read ? 'transparent' : '#e7f3ff', cursor: 'pointer' }}
+                      <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: n.read ? 'transparent' : 'rgba(5, 150, 105, 0.08)', cursor: 'pointer' }}
                         onClick={async () => { if (!n.read) { await api.crypto.markNotificationRead(n.id); loadNotifications(); } }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: '#1c1e21' }}>{n.title}</div>
-                        <div style={{ fontSize: 13, color: '#65676b', marginTop: 2 }}>{n.body}</div>
-                        <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{n.title}</div>
+                        <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{n.body}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{new Date(n.createdAt).toLocaleString()}</div>
                       </div>
                     ))
                   )}
@@ -115,6 +115,9 @@ export default function Navbar({ user, onLogout, unreadCount = 0 }) {
         </button>
         <button className="header-btn" onClick={() => navigate('/devices')} title="Linked Devices" style={{ fontSize: 14 }}>
           🔐
+        </button>
+        <button className="header-btn" onClick={() => navigate('/contacts')} title="Contacts" style={{ fontSize: 14 }}>
+          👥
         </button>
         <button className="header-btn" onClick={() => setShowShortcuts(true)} title="Keyboard shortcuts" style={{ fontSize: 14, fontWeight: 700 }}>?</button>
       </div>

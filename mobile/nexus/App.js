@@ -23,7 +23,7 @@ function FeedStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#1877f2' },
+        headerStyle: { backgroundColor: '#475569' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '600' },
       }}
@@ -46,7 +46,7 @@ function FriendsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#1877f2' },
+        headerStyle: { backgroundColor: '#475569' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '600' },
       }}
@@ -69,7 +69,7 @@ function MessagesStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#1877f2' },
+        headerStyle: { backgroundColor: '#475569' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '600' },
       }}
@@ -84,7 +84,7 @@ function MessagesStack() {
         component={ChatScreen}
         options={({ route }) => ({
           title: route.params?.userName || 'Chat',
-          headerStyle: { backgroundColor: '#1877f2' },
+          headerStyle: { backgroundColor: '#475569' },
         })}
       />
     </Stack.Navigator>
@@ -95,7 +95,7 @@ function NotificationsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#1877f2' },
+        headerStyle: { backgroundColor: '#475569' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '600' },
       }}
@@ -113,7 +113,7 @@ function ProfileStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#1877f2' },
+        headerStyle: { backgroundColor: '#475569' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '600' },
       }}
@@ -150,7 +150,7 @@ function MainTabs() {
             <Text style={{ fontSize: 22 }}>{icons[route.name]}</Text>
           );
         },
-        tabBarActiveTintColor: '#1877f2',
+        tabBarActiveTintColor: '#475569',
         tabBarInactiveTintColor: '#65676b',
         tabBarStyle: {
           backgroundColor: '#fff',
@@ -180,7 +180,7 @@ function RootNavigator() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#1877f2" />
+        <ActivityIndicator size="large" color="#475569" />
       </View>
     );
   }

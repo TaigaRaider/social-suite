@@ -11,6 +11,7 @@ import ChatList from './pages/ChatList';
 import Onboarding from './components/Onboarding';
 import Splash from './components/Splash';
 import DeviceManager from './components/DeviceManager';
+import ContactImporter from './components/ContactImporter';
 import CallManager from './components/CallManager';
 import { api } from './api';
 import './App.css';
@@ -67,6 +68,7 @@ function AppInner() {
               <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
               <Route path="/" element={<ProtectedRoute><ChatList /></ProtectedRoute>} />
               <Route path="/chat/:conversationId" element={<ProtectedRoute><ChatList /></ProtectedRoute>} />
+              <Route path="/contacts" element={<ProtectedRoute><ContactImporter api={api} onClose={() => window.history.back()} /></ProtectedRoute>} />
               <Route path="/devices" element={<ProtectedRoute><DeviceManager api={api} /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>

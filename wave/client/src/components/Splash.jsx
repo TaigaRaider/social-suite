@@ -32,7 +32,7 @@ export default function Splash({ onComplete }) {
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           {[0,1,2].map(i => (
             <div key={i} style={{
-              width: 8, height: 8, borderRadius: '50%', background: 'linear-gradient(135deg, #00a884, #25d366)',
+              width: 8, height: 8, borderRadius: '50%', background: 'linear-gradient(135deg, #059669, #10b981)',
               animation: `splashDot 1.2s ease-in-out ${i * 0.2}s infinite`
             }} />
           ))}

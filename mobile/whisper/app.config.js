@@ -3,14 +3,14 @@ export default {
     name: "Whisper",
     slug: "whisper",
     owner: "tatatis-team",
-    version: "1.1.5",
+    version: "1.1.6",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
-      backgroundColor: "#181818"
+      backgroundColor: "#d97706"
     },
     assetBundlePatterns: ["**/*"],
     ios: {
@@ -24,7 +24,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#181818"
+        backgroundColor: "#d97706"
       },
       package: "com.socialsuite.whisper",
       versionCode: 1,

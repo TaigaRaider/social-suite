@@ -90,7 +90,7 @@ export default function CreatePost({ onClose, onCreated }) {
                   onDragLeave={() => setDragOver(false)}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: `2px dashed ${dragOver ? '#833ab4' : 'var(--border)'}`,
+                    border: `2px dashed ${dragOver ? '#e11d48' : 'var(--border)'}`,
                     borderRadius: 12, padding: '40px 20px', textAlign: 'center', cursor: 'pointer',
                     color: 'var(--text-muted)', fontSize: 14, transition: 'border-color 0.2s, background 0.2s',
                     background: dragOver ? 'rgba(131,58,180,0.05)' : 'var(--bg-tertiary)'
@@ -128,7 +128,7 @@ export default function CreatePost({ onClose, onCreated }) {
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-              <button type="button" onClick={() => setShowSchedule(!showSchedule)} style={{ background: showSchedule ? 'rgba(131,58,180,0.15)' : 'var(--bg-tertiary)', color: showSchedule ? '#833ab4' : 'var(--text-secondary)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>
+              <button type="button" onClick={() => setShowSchedule(!showSchedule)} style={{ background: showSchedule ? 'rgba(225, 29, 72, 0.15)' : 'var(--bg-tertiary)', color: showSchedule ? '#e11d48' : 'var(--text-secondary)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>
                 &#128197; {showSchedule ? 'Scheduling' : 'Schedule'}
               </button>
             </div>

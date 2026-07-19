@@ -113,7 +113,7 @@ export default function MessagesScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#1877f2" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#475569" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={conversations}
@@ -126,7 +126,7 @@ export default function MessagesScreen({ navigation }) {
             </View>
           }
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1877f2" colors={['#1877f2']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#475569" colors={['#475569']} />
           }
         />
       )}
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   convTimeBold: {
-    color: '#1877f2',
+    color: '#475569',
     fontWeight: '600',
   },
   convPreview: {

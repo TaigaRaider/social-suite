@@ -175,11 +175,11 @@ export default function FeedScreen({ navigation }) {
         }
         ListFooterComponent={
           loadingMore ? (
-            <ActivityIndicator size="small" color="#1877f2" style={{ marginVertical: 16 }} />
+            <ActivityIndicator size="small" color="#475569" style={{ marginVertical: 16 }} />
           ) : null
         }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1877f2" colors={['#1877f2']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#475569" colors={['#475569']} />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   postBtn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     borderRadius: 6,
     paddingVertical: 8,
     paddingHorizontal: 20,

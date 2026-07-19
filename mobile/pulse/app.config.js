@@ -3,14 +3,14 @@ export default {
     name: "Pulse",
     slug: "pulse",
     owner: "tatatis-team",
-    version: "1.1.5",
+    version: "1.1.6",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
-      backgroundColor: "#1a1a2e"
+      backgroundColor: "#8b5cf6"
     },
     assetBundlePatterns: ["**/*"],
     ios: {
@@ -24,7 +24,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#1a1a2e"
+        backgroundColor: "#8b5cf6"
       },
       package: "com.socialsuite.pulse",
       versionCode: 1,

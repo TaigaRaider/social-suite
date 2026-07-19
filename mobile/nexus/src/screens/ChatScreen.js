@@ -159,7 +159,7 @@ export default function ChatScreen({ route }) {
     >
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#1877f2" />
+          <ActivityIndicator size="large" color="#475569" />
         </View>
       ) : (
         <FlatList
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   bubbleOwn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
   },
   bubbleOther: {
     backgroundColor: '#e4e6eb',
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {},
   sendBtnText: {
-    color: '#1877f2',
+    color: '#475569',
     fontSize: 16,
     fontWeight: '600',
   },

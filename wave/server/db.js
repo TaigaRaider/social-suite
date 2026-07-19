@@ -413,6 +413,23 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_token ON push_tokens(token)');
   db.run('CREATE INDEX IF NOT EXISTS idx_messages_readAt ON messages(readAt)');
 
+  db.run(`CREATE TABLE IF NOT EXISTS contacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    contactUserId INTEGER,
+    name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    importedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    syncedAt DATETIME,
+    FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_contacts_user ON contacts(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_contacts_linked ON contacts(contactUserId)');
+
   try { db.run("ALTER TABLE messages ADD COLUMN threadId INTEGER DEFAULT NULL"); } catch(e) {}
   try { db.run("ALTER TABLE messages ADD COLUMN replyToId INTEGER DEFAULT NULL"); } catch(e) {}
   try { db.run("ALTER TABLE messages ADD COLUMN messageType TEXT DEFAULT 'text'"); } catch(e) {}
@@ -530,6 +547,10 @@ export function query(sql, params = []) {
 export function queryOne(sql, params = []) {
   const results = query(sql, params);
   return results.length > 0 ? results[0] : null;
+}
+
+export function queryAll(sql, params = []) {
+  return query(sql, params);
 }
 
 export function run(sql, params = []) {

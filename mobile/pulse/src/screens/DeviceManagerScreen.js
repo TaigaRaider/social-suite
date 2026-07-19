@@ -130,7 +130,7 @@ export default function DeviceManagerScreen({ navigation }) {
           </TouchableOpacity>
           <Text style={styles.title}>Linked Devices</Text>
         </View>
-        <ActivityIndicator size="large" color="#0a66c2" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#8b5cf6" style={{ marginTop: 40 }} />
       </View>
     );
   }
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     padding: isSmallScreen ? 12 : 16, paddingTop: isSmallScreen ? 48 : 56,
     backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#e4e6eb'
   },
-  backBtn: { fontSize: 16, color: '#0a66c2', fontWeight: '600' },
+  backBtn: { fontSize: 16, color: '#8b5cf6', fontWeight: '600' },
   title: { fontSize: isSmallScreen ? 18 : 20, fontWeight: '700', color: '#1c1e21' },
   subtitle: { fontSize: 13, color: '#65676b', padding: isSmallScreen ? 12 : 16, paddingBottom: 8 },
   list: { padding: isSmallScreen ? 12 : 16, gap: 10 },
@@ -176,13 +176,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'white', borderRadius: 12, padding: isSmallScreen ? 12 : 16,
     borderWidth: 1, borderColor: '#e4e6eb'
   },
-  currentDevice: { borderColor: '#0a66c2', backgroundColor: '#e7f3ff' },
+  currentDevice: { borderColor: '#8b5cf6', backgroundColor: '#e7f3ff' },
   deviceHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   deviceIcon: { fontSize: 28 },
   deviceInfo: { flex: 1 },
   deviceNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   deviceName: { fontWeight: '600', fontSize: isSmallScreen ? 14 : 15, color: '#1c1e21' },
-  currentBadge: { backgroundColor: '#0a66c2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  currentBadge: { backgroundColor: '#8b5cf6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
   currentBadgeText: { color: 'white', fontSize: 11, fontWeight: '600' },
   deviceId: { fontSize: 12, color: '#65676b', fontFamily: 'monospace', marginTop: 4 },
   lastSeen: { fontSize: 12, color: '#65676b', marginTop: 2 },

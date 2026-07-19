@@ -26,6 +26,8 @@ export default function ChatList() {
   const [messageSearchResults, setMessageSearchResults] = useState([]);
   const [messageSearchLoading, setMessageSearchLoading] = useState(false);
   const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [searchMode, setSearchMode] = useState('conversations');
+  const [searchResults, setSearchResults] = useState([]);
   const messageSearchTimerRef = useRef(null);
 
   useEffect(() => {
@@ -98,16 +100,33 @@ export default function ChatList() {
     if (messageSearchTimerRef.current) clearTimeout(messageSearchTimerRef.current);
     if (!value.trim()) {
       setMessageSearchResults([]);
+      setSearchResults([]);
       setMessageSearchLoading(false);
       return;
     }
     setMessageSearchLoading(true);
     messageSearchTimerRef.current = setTimeout(async () => {
       try {
-        const results = await api.searchMessages(value.trim());
-        setMessageSearchResults(results);
+        if (searchMode === 'messages') {
+          const data = await api.crypto.searchMessages(value.trim());
+          setMessageSearchResults(data.messages || []);
+          setSearchResults(data.messages || []);
+        } else if (searchMode === 'users') {
+          const data = await api.crypto.searchUsers(value.trim());
+          setMessageSearchResults(data.users || []);
+          setSearchResults(data.users || []);
+        } else if (searchMode === 'conversations') {
+          const data = await api.crypto.searchConversations(value.trim());
+          setMessageSearchResults(data.conversations || []);
+          setSearchResults(data.conversations || []);
+        } else {
+          const results = await api.searchMessages(value.trim());
+          setMessageSearchResults(results);
+          setSearchResults(results);
+        }
       } catch {
         setMessageSearchResults([]);
+        setSearchResults([]);
       } finally {
         setMessageSearchLoading(false);
       }
@@ -154,6 +173,14 @@ export default function ChatList() {
 
           {showMessageSearch && (
             <div className="message-search-overlay">
+              <div style={{ display: 'flex', gap: 4, padding: '8px 12px 0' }}>
+                {['conversations', 'messages', 'users'].map(mode => (
+                  <button key={mode} onClick={() => { setSearchMode(mode); if (messageSearchQuery) handleMessageSearch(messageSearchQuery); }}
+                    style={{ padding: '6px 12px', background: searchMode === mode ? '#8b5cf6' : '#e2e8f0', color: searchMode === mode ? 'white' : '#475569', border: 'none', borderRadius: 16, fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}>
+                    {mode}
+                  </button>
+                ))}
+              </div>
               <div className="search-input-wrapper">
                 <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input
@@ -171,23 +198,46 @@ export default function ChatList() {
                 <div className="message-search-results">
                   {messageSearchLoading ? (
                     <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Searching...</div>
-                  ) : messageSearchResults.length === 0 ? (
-                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>No messages found</div>
+                  ) : searchResults.length === 0 ? (
+                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>No results found</div>
                   ) : (
-                    messageSearchResults.map(result => {
-                      const name = (result.otherFirstName || result.otherLastName)
-                        ? `${result.otherFirstName || ''} ${result.otherLastName || ''}`.trim()
-                        : result.otherUsername;
-                      return (
-                        <div key={result.id} className="message-search-result" onClick={() => handleSearchResultClick(result)}>
-                          <div className="result-info">
-                            <div className="result-name">{name}</div>
-                            <div className="result-preview">{result.content}</div>
+                    searchMode === 'users' ? (
+                      searchResults.map(r => (
+                        <div key={r.id} className="message-search-result" onClick={() => { handleSelectConversation(r.id); setShowMessageSearch(false); }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
+                            {(r.firstName?.[0] || r.username?.[0] || '?').toUpperCase()}
                           </div>
-                          <span className="result-time">{formatResultTime(result.createdAt)}</span>
+                          <div className="result-info">
+                            <div className="result-name">{r.firstName} {r.lastName}</div>
+                            <div className="result-preview">@{r.username}</div>
+                          </div>
                         </div>
-                      );
-                    })
+                      ))
+                    ) : searchMode === 'messages' ? (
+                      searchResults.map(r => (
+                        <div key={r.id} className="message-search-result" onClick={() => { if (r.conversationId) { navigate(`/chat/${r.conversationId}`); setMobileShowChat(true); } setShowMessageSearch(false); }}>
+                          <div className="result-info">
+                            <div className="result-name">{r.firstName} {r.lastName}</div>
+                            <div className="result-preview">{r.content}</div>
+                          </div>
+                          <span className="result-time">{formatResultTime(r.createdAt)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      searchResults.map(r => {
+                        const name = r.firstName || r.lastName
+                          ? `${r.firstName || ''} ${r.lastName || ''}`.trim()
+                          : r.username;
+                        return (
+                          <div key={r.id} className="message-search-result" onClick={() => { handleSelectConversation(r.id); setShowMessageSearch(false); }}>
+                            <div className="result-info">
+                              <div className="result-name">{name}</div>
+                              <div className="result-preview">@{r.username}</div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )
                   )}
                 </div>
               )}

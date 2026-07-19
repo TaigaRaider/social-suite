@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 
 const COLORS = [
-  '#1877f2', '#42b72a', '#f02849', '#f7b928',
+  '#475569', '#42b72a', '#f02849', '#f7b928',
   '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',
 ];
 

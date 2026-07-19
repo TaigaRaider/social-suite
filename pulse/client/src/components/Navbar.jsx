@@ -91,21 +91,21 @@ export default function Navbar() {
                   <span style={{ fontWeight: 600, fontSize: 15 }}>Notifications</span>
                   {unreadCount > 0 && (
                     <button onClick={async () => { await api.crypto.markAllNotificationsRead(); loadNotifications(); }}
-                      style={{ background: 'none', border: 'none', color: '#0a66c2', cursor: 'pointer', fontSize: 13 }}>
+                      style={{ background: 'none', border: 'none', color: '#8b5cf6', cursor: 'pointer', fontSize: 13 }}>
                       Mark all read
                     </button>
                   )}
                 </div>
                 <div style={{ overflowY: 'auto', maxHeight: 400 }}>
                   {notifications.length === 0 ? (
-                    <div style={{ padding: 32, textAlign: 'center', color: '#65676b', fontSize: 14 }}>No notifications</div>
+                    <div style={{ padding: 32, textAlign: 'center', color: '#64748b', fontSize: 14 }}>No notifications</div>
                   ) : (
                     notifications.slice(0, 20).map(n => (
-                      <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: n.read ? 'transparent' : '#e7f3ff', cursor: 'pointer' }}
+                      <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: n.read ? 'transparent' : 'rgba(139, 92, 246, 0.08)', cursor: 'pointer' }}
                         onClick={async () => { if (!n.read) { await api.crypto.markNotificationRead(n.id); loadNotifications(); } }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: '#1c1e21' }}>{n.title}</div>
-                        <div style={{ fontSize: 13, color: '#65676b', marginTop: 2 }}>{n.body}</div>
-                        <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{n.title}</div>
+                        <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{n.body}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{new Date(n.createdAt).toLocaleString()}</div>
                       </div>
                     ))
                   )}
@@ -165,6 +165,10 @@ export default function Navbar() {
                 <button className="dropdown-item" onClick={() => { setShowDropdown(false); navigate('/devices'); }}>
                   <span style={{ fontSize: 14, marginRight: 8 }}>🔐</span>
                   Linked Devices
+                </button>
+                <button className="dropdown-item" onClick={() => { setShowDropdown(false); navigate('/contacts'); }}>
+                  <span style={{ fontSize: 14, marginRight: 8 }}>👥</span>
+                  Contacts
                 </button>
                 <button className="dropdown-item danger" onClick={handleLogout}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>

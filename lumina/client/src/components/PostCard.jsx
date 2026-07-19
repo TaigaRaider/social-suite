@@ -112,7 +112,7 @@ export default function PostCard({ post, onDelete, scheduled, onCancelScheduled 
         />
         <Link to={`/profile/${post.userId}`} className="post-user">{displayName}</Link>
         {scheduled && (
-          <span style={{ fontSize: 12, color: '#833ab4', marginLeft: 'auto', marginRight: 8 }}>&#128197; Scheduled: {new Date(post.scheduledAt).toLocaleString()}</span>
+          <span style={{ fontSize: 12, color: '#e11d48', marginLeft: 'auto', marginRight: 8 }}>&#128197; Scheduled: {new Date(post.scheduledAt).toLocaleString()}</span>
         )}
         {post.userId === user?.id && (
           scheduled ? (
@@ -200,7 +200,7 @@ export default function PostCard({ post, onDelete, scheduled, onCancelScheduled 
               disabled={!commentText.trim() || submitting}
               style={{
                 background: 'none',
-                color: commentText.trim() ? '#833ab4' : 'var(--text-muted)',
+                color: commentText.trim() ? '#e11d48' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: 13,
               }}

@@ -140,7 +140,7 @@ export default function DeviceManager({ api, onClose }) {
         <button
           onClick={() => setShowAddDevice(true)}
           style={{
-            background: '#0a66c2',
+            background: '#059669',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -182,7 +182,7 @@ export default function DeviceManager({ api, onClose }) {
                 gap: responsive.sm ? '16px' : '12px',
                 padding: responsive.sm ? '16px 20px' : '12px 16px',
                 background: device.deviceId === currentDeviceId ? '#e7f3ff' : 'white',
-                border: `1px solid ${device.deviceId === currentDeviceId ? '#0a66c2' : '#e4e6eb'}`,
+                border: `1px solid ${device.deviceId === currentDeviceId ? '#059669' : '#e4e6eb'}`,
                 borderRadius: '12px',
                 flexDirection: responsive.sm ? 'row' : 'column',
                 textAlign: responsive.sm ? 'left' : 'center'
@@ -198,7 +198,7 @@ export default function DeviceManager({ api, onClose }) {
                   </span>
                   {device.isCurrent && (
                     <span style={{
-                      background: '#0a66c2',
+                      background: '#059669',
                       color: 'white',
                       padding: '2px 8px',
                       borderRadius: '12px',
@@ -297,7 +297,7 @@ export default function DeviceManager({ api, onClose }) {
                 fontFamily: 'monospace',
                 fontSize: '16px',
                 letterSpacing: '2px',
-                border: '2px dashed #0a66c2'
+                border: '2px dashed #059669'
               }}>
                 {currentDeviceId || 'Loading...'}
               </div>
@@ -318,7 +318,7 @@ export default function DeviceManager({ api, onClose }) {
                   alert('Linking code copied!');
                 }}
                 style={{
-                  flex: 1, background: '#0a66c2', color: 'white', border: 'none', borderRadius: '8px',
+                  flex: 1, background: '#059669', color: 'white', border: 'none', borderRadius: '8px',
                   padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                 }}
               >

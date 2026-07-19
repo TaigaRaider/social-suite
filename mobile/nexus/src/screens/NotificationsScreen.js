@@ -162,7 +162,7 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#1877f2" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#475569" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={notifications}
@@ -175,7 +175,7 @@ export default function NotificationsScreen({ navigation }) {
             </View>
           }
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1877f2" colors={['#1877f2']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#475569" colors={['#475569']} />
           }
           onEndReached={loadMore}
           onEndReachedThreshold={0.3}
@@ -233,14 +233,14 @@ const styles = StyleSheet.create({
   },
   notifTime: {
     fontSize: 12,
-    color: '#1877f2',
+    color: '#475569',
     marginTop: 2,
   },
   unreadDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     marginLeft: 8,
   },
   empty: {

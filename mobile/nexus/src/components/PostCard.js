@@ -147,7 +147,7 @@ export default function PostCard({ post, onDelete, onNavigateProfile }) {
           disabled={liking}
         >
           {liking ? (
-            <ActivityIndicator size="small" color="#1877f2" />
+            <ActivityIndicator size="small" color="#475569" />
           ) : (
             <Text style={[styles.actionText, isLiked && styles.actionTextActive]}>
               {isLiked ? '👍 Liked' : '👍 Like'}
@@ -176,7 +176,7 @@ export default function PostCard({ post, onDelete, onNavigateProfile }) {
           </View>
 
           {loadingComments ? (
-            <ActivityIndicator size="large" color="#1877f2" style={{ marginTop: 40 }} />
+            <ActivityIndicator size="large" color="#475569" style={{ marginTop: 40 }} />
           ) : (
             <FlatList
               data={comments}
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   actionTextActive: {
-    color: '#1877f2',
+    color: '#475569',
   },
   modalContainer: {
     flex: 1,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   modalClose: {
     fontSize: 16,
-    color: '#1877f2',
+    color: '#475569',
   },
   modalTitle: {
     fontSize: 18,
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {},
   sendBtnText: {
-    color: '#1877f2',
+    color: '#475569',
     fontWeight: '600',
     fontSize: 14,
   },

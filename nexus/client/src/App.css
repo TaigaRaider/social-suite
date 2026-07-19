@@ -1,39 +1,77 @@
 :root {
-  --fb-blue: #1877f2;
-  --fb-blue-hover: #166fe5;
-  --fb-green: #42b72a;
-  --fb-green-hover: #36a420;
-  --fb-red: #fa3e3e;
+  --primary: #475569;
+  --primary-hover: #334155;
+  --accent: #0ea5e9;
+  --accent-hover: #0284c7;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
 }
 
-:root, [data-theme="dark"] {
-  --fb-bg: #18191a;
-  --fb-white: #242526;
-  --fb-dark: #e4e6eb;
-  --fb-gray: #b0b3b8;
-  --fb-light-gray: #3a3b3c;
-  --fb-border: #3e4042;
-  --skeleton-base: rgba(255,255,255,0.06);
-  --skeleton-shine: rgba(255,255,255,0.15);
-  --navbar-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  --card-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  --modal-overlay: rgba(0,0,0,0.7);
-  --hover-bg: #4e4f50;
+[data-theme="dark"] {
+  --primary: #475569;
+  --primary-hover: #334155;
+  --accent: #0ea5e9;
+  --accent-hover: #0284c7;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-secondary: #334155;
+  --border-color: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
 }
 
 [data-theme="light"] {
-  --fb-bg: #f0f2f5;
-  --fb-white: #ffffff;
-  --fb-dark: #1c1e21;
-  --fb-gray: #65676b;
-  --fb-light-gray: #e4e6eb;
-  --fb-border: #dddfe2;
+  --fb-bg: var(--bg);
+  --fb-white: var(--surface);
+  --fb-dark: var(--text-primary);
+  --fb-gray: var(--text-secondary);
+  --fb-light-gray: var(--surface-secondary);
+  --fb-border: var(--border-color);
   --skeleton-base: rgba(0,0,0,0.06);
   --skeleton-shine: rgba(0,0,0,0.12);
   --navbar-shadow: 0 2px 4px rgba(0,0,0,0.1);
   --card-shadow: 0 1px 2px rgba(0,0,0,0.1);
   --modal-overlay: rgba(0,0,0,0.5);
-  --hover-bg: #d8dadf;
+  --hover-bg: #e2e8f0;
+  --fb-blue: var(--accent);
+  --fb-blue-hover: var(--accent-hover);
+  --fb-green: var(--success);
+  --fb-green-hover: #059669;
+  --fb-red: var(--danger);
+}
+
+:root, [data-theme="dark"] {
+  --fb-bg: var(--bg);
+  --fb-white: var(--surface);
+  --fb-dark: var(--text-primary);
+  --fb-gray: var(--text-secondary);
+  --fb-light-gray: var(--surface-secondary);
+  --fb-border: var(--border-color);
+  --skeleton-base: rgba(255,255,255,0.06);
+  --skeleton-shine: rgba(255,255,255,0.15);
+  --navbar-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  --card-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  --modal-overlay: rgba(0,0,0,0.7);
+  --hover-bg: #334155;
+  --fb-blue: var(--accent);
+  --fb-blue-hover: var(--accent-hover);
+  --fb-green: var(--success);
+  --fb-green-hover: #059669;
+  --fb-red: var(--danger);
 }
 
 @keyframes shimmer {
@@ -212,7 +250,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 /* Profile */
 .profile-cover {
-  height: 350px; background: linear-gradient(135deg, #1877f2 0%, #42b72a 100%);
+  height: 350px; background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
   border-radius: 0 0 8px 8px; position: relative;
 }
 .profile-info {
@@ -303,10 +341,10 @@ textarea { resize: vertical; min-height: 80px; }
   font-size: 14px;
 }
 .notif-item:hover { background: var(--fb-bg); }
-.notif-item.unread { background: #e7f3ff; }
-.notif-item.unread:hover { background: #d4e8ff; }
-[data-theme="dark"] .notif-item.unread { background: #1a2a3a; }
-[data-theme="dark"] .notif-item.unread:hover { background: #1e3348; }
+.notif-item.unread { background: rgba(14,165,233,0.08); }
+.notif-item.unread:hover { background: rgba(14,165,233,0.15); }
+[data-theme="dark"] .notif-item.unread { background: rgba(14,165,233,0.15); }
+[data-theme="dark"] .notif-item.unread:hover { background: rgba(14,165,233,0.22); }
 
 /* Loading */
 .loading {
@@ -345,7 +383,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 /* Drop Zone */
 .drop-zone { transition: border-color 0.2s, background 0.2s; }
-.drop-zone-active { background: rgba(24,119,242,0.05); }
+.drop-zone-active { background: rgba(14,165,233,0.05); }
 
 /* Poll */
 .poll-option-bar { transition: width 0.3s ease; }

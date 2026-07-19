@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 40,
     fontWeight: '700',
-    color: '#1877f2',
+    color: '#475569',
     fontStyle: 'italic',
   },
   tagline: {
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     borderColor: '#dddfe2',
   },
   loginBtn: {
-    backgroundColor: '#1877f2',
+    backgroundColor: '#475569',
     borderRadius: 8,
     padding: 14,
     alignItems: 'center',
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   forgotText: {
-    color: '#1877f2',
+    color: '#475569',
     fontSize: 14,
   },
   divider: {

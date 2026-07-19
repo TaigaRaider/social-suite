@@ -118,10 +118,10 @@ export default function ChatScreen({ route, navigation }) {
         headerRight: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity onPress={() => navigation.navigate('CallScreen', { peerId, peerName: name, callType: 'voice', isIncoming: false })} style={{ marginRight: 8 }}>
-              <Ionicons name="call" size={20} color="#0a66c2" />
+              <Ionicons name="call" size={20} color="#8b5cf6" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('CallScreen', { peerId, peerName: name, callType: 'video', isIncoming: false })} style={{ marginRight: 8 }}>
-              <Ionicons name="videocam" size={20} color="#0a66c2" />
+              <Ionicons name="videocam" size={20} color="#8b5cf6" />
             </TouchableOpacity>
           </View>
         ),

@@ -4,35 +4,57 @@
   box-sizing: border-box;
 }
 
-:root,
+:root {
+  --primary: #475569;
+  --primary-hover: #334155;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface);
+  --bg-tertiary: var(--surface-secondary);
+  --bg-card: var(--surface);
+}
+
 [data-theme="dark"] {
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #262626;
-  --bg-card: #1a1a1a;
-  --text-primary: #f5f5f5;
-  --text-secondary: #a8a8a8;
-  --text-muted: #737373;
-  --border: #363636;
-  --accent: linear-gradient(45deg, #833ab4, #fd1d1d, #fc466b);
-  --accent-hover: linear-gradient(45deg, #933ab4, #fd2d2d, #fc567b);
-  --danger: #ed4956;
-  --success: #58c322;
+  --primary: #475569;
+  --primary-hover: #334155;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-secondary: #334155;
+  --border: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface);
+  --bg-tertiary: var(--surface-secondary);
+  --bg-card: var(--surface);
 }
 
 [data-theme="light"] {
-  --bg-primary: #fafafa;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f0f0f0;
-  --bg-card: #ffffff;
-  --text-primary: #1a1a1a;
-  --text-secondary: #555555;
-  --text-muted: #888888;
-  --border: #e0e0e0;
-  --accent: linear-gradient(45deg, #833ab4, #fd1d1d, #fc466b);
-  --accent-hover: linear-gradient(45deg, #933ab4, #fd2d2d, #fc567b);
-  --danger: #ed4956;
-  --success: #58c322;
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface);
+  --bg-tertiary: var(--surface-secondary);
+  --bg-card: var(--surface);
+  --danger: var(--danger);
+  --success: var(--success);
 }
 
 body {
@@ -69,7 +91,7 @@ input, textarea {
   width: 40px;
   height: 40px;
   border: 3px solid var(--bg-tertiary);
-  border-top-color: #fc466b;
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -223,7 +245,7 @@ input, textarea {
 }
 
 .auth-card input:focus {
-  border-color: #833ab4;
+  border-color: var(--accent);
 }
 
 .auth-card .btn-primary {
@@ -266,7 +288,7 @@ input, textarea {
 }
 
 .auth-link a {
-  color: #833ab4;
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -623,7 +645,7 @@ input, textarea {
 }
 
 .explore-search input:focus {
-  border-color: #833ab4;
+  border-color: var(--accent);
 }
 
 .explore-search .search-icon {
@@ -714,7 +736,7 @@ input, textarea {
 }
 
 .notification-item.unread {
-  background: rgba(131, 58, 180, 0.08);
+  background: rgba(225, 29, 72, 0.08);
 }
 
 .notification-item img {
@@ -823,7 +845,7 @@ input, textarea {
 
 .modal-body input:focus,
 .modal-body textarea:focus {
-  border-color: #833ab4;
+  border-color: var(--accent);
 }
 
 .modal-body .btn-post {
@@ -928,9 +950,9 @@ input, textarea {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #833ab4;
+  color: var(--accent);
   padding: 2px 8px;
-  background: rgba(131, 58, 180, 0.1);
+  background: rgba(225, 29, 72, 0.1);
   border-radius: 12px;
 }
 
@@ -972,7 +994,7 @@ input, textarea {
 
 .suggestion-item button {
   background: none;
-  color: #833ab4;
+  color: var(--accent);
   font-size: 13px;
   font-weight: 600;
 }

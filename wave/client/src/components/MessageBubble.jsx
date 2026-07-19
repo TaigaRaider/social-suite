@@ -39,7 +39,7 @@ export default function MessageBubble({ message, isSent, showSender }) {
     : message.senderName;
 
   const senderColor = (() => {
-    const colors = ['#00a884', '#53bdeb', '#e5a0ff', '#ffb347', '#ff6b6b', '#6bff9e', '#ffd700'];
+    const colors = ['#059669', '#53bdeb', '#e5a0ff', '#ffb347', '#ff6b6b', '#6bff9e', '#ffd700'];
     let hash = 0;
     const name = message.senderName || '';
     for (let i = 0; i < name.length; i++) {
@@ -96,11 +96,11 @@ export default function MessageBubble({ message, isSent, showSender }) {
         {message.encrypted ? '🔒 ' : ''}
         {message.messageType === 'voice' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button onClick={() => playVoice(message.id)} style={{ background: isSent ? 'rgba(255,255,255,0.2)' : '#00a884', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <button onClick={() => playVoice(message.id)} style={{ background: isSent ? 'rgba(255,255,255,0.2)' : '#059669', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               ▶
             </button>
             <div style={{ flex: 1, height: 4, background: isSent ? 'rgba(255,255,255,0.3)' : '#2a3942', borderRadius: 2, position: 'relative', minWidth: 60 }}>
-              <div style={{ width: '0%', height: '100%', background: isSent ? 'white' : '#00a884', borderRadius: 2 }} />
+              <div style={{ width: '0%', height: '100%', background: isSent ? 'white' : '#059669', borderRadius: 2 }} />
             </div>
             <span style={{ fontSize: 11, opacity: 0.8 }}>
               {message.voiceDuration ? `${Math.floor(message.voiceDuration / 60)}:${(message.voiceDuration % 60).toString().padStart(2, '0')}` : '0:00'}
@@ -121,11 +121,11 @@ export default function MessageBubble({ message, isSent, showSender }) {
         </div>
       )}
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        <button onClick={() => onReply(message)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#00a884' }}>
+        <button onClick={() => onReply(message)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#059669' }}>
           &#8617; Reply
         </button>
         {replyCount > 0 && (
-          <button onClick={() => setShowThread(!showThread)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#00a884' }}>
+          <button onClick={() => setShowThread(!showThread)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#059669' }}>
             {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
           </button>
         )}
@@ -135,7 +135,7 @@ export default function MessageBubble({ message, isSent, showSender }) {
         {getReadIcon()}
       </div>
       {showThread && (
-        <div style={{ borderLeft: '3px solid #00a884', marginLeft: 8, marginTop: 8, padding: 12, background: '#1f2c34', borderRadius: '0 8px 8px 0', height: 300 }}>
+        <div style={{ borderLeft: '3px solid #059669', marginLeft: 8, marginTop: 8, padding: 12, background: '#1f2c34', borderRadius: '0 8px 8px 0', height: 300 }}>
           <ThreadView messageId={message.id} api={api} socket={null} user={null} onClose={() => setShowThread(false)} />
         </div>
       )}

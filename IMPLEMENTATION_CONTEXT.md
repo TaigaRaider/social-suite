@@ -11,7 +11,7 @@
 - MAJOR: Major platform changes
 - MINOR: Feature sprints (resets each major)
 - PATCH: Sprint increments (1.1.0 -> 1.1.1 -> 1.1.2)
-- Current: 1.1.5 (Sprint 7)
+- Current: 1.1.6 (Sprint 8)
 
 ## App Ports & DB Schemas
 | App | Port | Version | Key Features |
@@ -590,6 +590,27 @@ Added indexes on all foreign keys, lookup columns, and frequently queried fields
 - Disappearing messages toggle (⏱️) in chat headers
 - Client-side conversation search for encrypted chats
 - Pre-key replenishment auto-check on login/register
+- All servers syntax OK, all web clients build clean
+
+## Sprint 8 Changelog (v1.1.6)
+- Version bumped 1.1.5 → 1.1.6 across all Expo apps + eas.json (build 8)
+- Modern slate color scheme across all 5 apps:
+  - CSS variables with slate-50/100/200/400/500/600/700/900 palette
+  - Dark mode support with dark slate backgrounds
+  - Per-app accent colors: Nexus (sky-500), Lumina (rose-600), Pulse (violet-500), Wave (emerald-600), Whisper (amber-600)
+  - Updated all component inline colors from old brand to new slate palette
+  - Mobile splash screens updated to accent colors
+- Contact sync/import:
+  - contacts DB table with phone/email matching to existing users
+  - Import contacts from CSV/JSON files
+  - Manual contact add
+  - Sync contacts to find new matches on platform
+  - ContactImporter component (web + mobile)
+- Full-text message search:
+  - Search messages by content (LIKE query)
+  - Search users by name/username
+  - Search conversations/groups
+  - Search mode tabs (conversations/messages/users) in chat list
 - All servers syntax OK, all web clients build clean
 
 ## Sprint 7 Changelog (v1.1.5)

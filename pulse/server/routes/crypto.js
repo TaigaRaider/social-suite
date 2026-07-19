@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
-import { run, query, queryOne, saveDB } from '../db.js';
+import { run, query, queryOne, queryAll, saveDB } from '../db.js';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
@@ -828,6 +828,183 @@ router.get('/messages/:messageId/voice', auth, (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to get voice message' });
+  }
+});
+
+// Import contacts (batch)
+router.post('/contacts/import', auth, (req, res) => {
+  try {
+    const { contacts } = req.body;
+    if (!contacts || !Array.isArray(contacts)) {
+      return res.status(400).json({ error: 'contacts array required' });
+    }
+
+    let imported = 0;
+    let matched = 0;
+
+    contacts.forEach(c => {
+      const phone = c.phone?.replace(/\D/g, '');
+      const email = c.email?.toLowerCase();
+
+      let linkedUserId = null;
+      if (phone) {
+        const user = queryOne('SELECT id FROM users WHERE phone = ? OR REPLACE(REPLACE(REPLACE(phone, \'-\', \'\'), \' \', \'\'), \'(\', \'\') = ?', [phone, phone]);
+        if (user) { linkedUserId = user.id; matched++; }
+      }
+      if (!linkedUserId && email) {
+        const user = queryOne('SELECT id FROM users WHERE email = ?', [email]);
+        if (user) { linkedUserId = user.id; matched++; }
+      }
+
+      run(`INSERT INTO contacts (userId, contactUserId, name, phone, email, importedAt, syncedAt)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        [req.userId, linkedUserId, c.name || 'Unknown', phone || null, email || null]);
+      imported++;
+    });
+
+    saveDB();
+    res.json({ success: true, imported, matched });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to import contacts' });
+  }
+});
+
+// Get user's contacts
+router.get('/contacts', auth, (req, res) => {
+  try {
+    const contacts = queryAll(
+      `SELECT c.*, u.username, u.firstName, u.lastName, u.avatar
+       FROM contacts c LEFT JOIN users u ON c.contactUserId = u.id
+       WHERE c.userId = ? ORDER BY c.name ASC`,
+      [req.userId]
+    );
+    res.json({ contacts });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get contacts' });
+  }
+});
+
+// Sync contacts (check for new matches)
+router.post('/contacts/sync', auth, (req, res) => {
+  try {
+    const contacts = queryAll('SELECT * FROM contacts WHERE userId = ? AND contactUserId IS NULL', [req.userId]);
+    let matched = 0;
+
+    contacts.forEach(c => {
+      if (c.phone) {
+        const user = queryOne('SELECT id FROM users WHERE phone = ?', [c.phone]);
+        if (user) {
+          run('UPDATE contacts SET contactUserId = ?, syncedAt = datetime(\'now\') WHERE id = ?', [user.id, c.id]);
+          matched++;
+        }
+      }
+      if (c.email) {
+        const user = queryOne('SELECT id FROM users WHERE email = ?', [c.email]);
+        if (user) {
+          run('UPDATE contacts SET contactUserId = ?, syncedAt = datetime(\'now\') WHERE id = ?', [user.id, c.id]);
+          matched++;
+        }
+      }
+    });
+
+    saveDB();
+    res.json({ success: true, matched });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to sync contacts' });
+  }
+});
+
+// Delete contact
+router.delete('/contacts/:contactId', auth, (req, res) => {
+  try {
+    const contactId = parseInt(req.params.contactId);
+    run('DELETE FROM contacts WHERE id = ? AND userId = ?', [contactId, req.userId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete contact' });
+  }
+});
+
+// Full-text search messages
+router.get('/search/messages', auth, (req, res) => {
+  try {
+    const q = req.query.q;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const peerId = req.query.peerId ? parseInt(req.query.peerId) : null;
+
+    if (!q || q.length < 2) {
+      return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    }
+
+    let sql = `SELECT m.*, u.username, u.firstName, u.lastName
+               FROM messages m JOIN users u ON m.senderId = u.id
+               WHERE (m.senderId = ? OR m.receiverId = ?)
+               AND m.content LIKE ?`;
+    let params = [req.userId, req.userId, `%${q}%`];
+
+    if (peerId) {
+      sql += ' AND (m.senderId = ? OR m.receiverId = ?)';
+      params.push(peerId, peerId);
+    }
+
+    sql += ' ORDER BY m.createdAt DESC LIMIT ?';
+    params.push(limit);
+
+    const messages = queryAll(sql, params);
+    res.json({ messages, query: q });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search messages' });
+  }
+});
+
+// Search users
+router.get('/search/users', auth, (req, res) => {
+  try {
+    const q = req.query.q;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+
+    if (!q || q.length < 2) {
+      return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    }
+
+    const users = queryAll(
+      `SELECT id, username, firstName, lastName, avatar, bio
+       FROM users
+       WHERE (username LIKE ? OR firstName LIKE ? OR lastName LIKE ? OR email LIKE ?)
+       AND id != ?
+       LIMIT ?`,
+      [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, req.userId, limit]
+    );
+
+    res.json({ users, query: q });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search users' });
+  }
+});
+
+// Search conversations
+router.get('/search/conversations', auth, (req, res) => {
+  try {
+    const q = req.query.q;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+
+    if (!q || q.length < 2) {
+      return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    }
+
+    const conversations = queryAll(
+      `SELECT DISTINCT u.id, u.username, u.firstName, u.lastName, u.avatar
+       FROM conversations c
+       JOIN users u ON (c.user1Id = u.id OR c.user2Id = u.id) AND u.id != ?
+       WHERE (u.username LIKE ? OR u.firstName LIKE ? OR u.lastName LIKE ?)
+       LIMIT ?`,
+      [req.userId, `%${q}%`, `%${q}%`, `%${q}%`, limit]
+    );
+
+    res.json({ conversations, query: q });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search conversations' });
   }
 });
 

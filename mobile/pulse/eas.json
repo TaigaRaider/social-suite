@@ -4,22 +4,22 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": { "simulator": true, "buildNumber": "7" },
-      "android": { "buildType": "apk", "versionCode": 7 }
+      "ios": { "simulator": true, "buildNumber": "8" },
+      "android": { "buildType": "apk", "versionCode": 8 }
     },
     "preview": {
       "distribution": "internal",
-      "ios": { "simulator": false, "buildNumber": "7" },
+      "ios": { "simulator": false, "buildNumber": "8" },
       "android": {
         "buildType": "apk",
-        "versionCode": 7,
+        "versionCode": 8,
         "image": "ubuntu-26.04-jdk-17-ndk-r27b-sdk-57"
       }
     },
     "production": {
-      "version": "1.1.5",
-      "ios": { "buildNumber": "7" },
-      "android": { "buildType": "app-bundle", "versionCode": 7 }
+      "version": "1.1.6",
+      "ios": { "buildNumber": "8" },
+      "android": { "buildType": "app-bundle", "versionCode": 8 }
     }
   }
 }

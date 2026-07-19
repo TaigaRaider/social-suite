@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import NewGroup from './pages/NewGroup';
 import Onboarding from './components/Onboarding';
 import DeviceManager from './components/DeviceManager';
+import ContactImporter from './components/ContactImporter';
 import CallManager from './components/CallManager';
 import { api } from './api';
 import Splash from './components/Splash';
@@ -64,6 +65,7 @@ function AppContent() {
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/group/:groupId" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/new-group" element={<ProtectedRoute><NewGroup /></ProtectedRoute>} />
+          <Route path="/contacts" element={<ProtectedRoute><ContactImporter api={api} onClose={() => window.history.back()} /></ProtectedRoute>} />
           <Route path="/devices" element={<ProtectedRoute><DeviceManager api={api} /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>

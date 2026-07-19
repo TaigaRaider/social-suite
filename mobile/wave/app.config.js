@@ -3,14 +3,14 @@ export default {
     name: "Wave",
     slug: "wave",
     owner: "tatatis-team",
-    version: "1.1.5",
+    version: "1.1.6",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
-      backgroundColor: "#111b21"
+      backgroundColor: "#059669"
     },
     assetBundlePatterns: ["**/*"],
     ios: {
@@ -24,7 +24,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#111b21"
+        backgroundColor: "#059669"
       },
       package: "com.socialsuite.wave",
       versionCode: 1,

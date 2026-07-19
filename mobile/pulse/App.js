@@ -18,6 +18,7 @@ import NewChatScreen from './src/screens/NewChatScreen';
 import DeviceManagerScreen from './src/screens/DeviceManagerScreen';
 import CallScreen from './src/screens/CallScreen';
 import ThreadScreen from './src/screens/ThreadScreen';
+import ContactImporterScreen from './src/screens/ContactImporterScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -117,6 +118,11 @@ function AppNavigator() {
           <RootStack.Screen
             name="Thread"
             component={ThreadScreen}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="ContactImporter"
+            component={ContactImporterScreen}
             options={{ headerShown: false }}
           />
         </RootStack.Group>

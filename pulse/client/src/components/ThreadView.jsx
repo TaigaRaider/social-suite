@@ -70,7 +70,7 @@ export default function ThreadView({ messageId, api, socket, user, onClose }) {
               {msg.senderId === user?.id ? 'You' : `${msg.firstName || ''} ${msg.lastName || ''}`}
             </div>
             <div style={{
-              background: msg.senderId === user?.id ? '#0a66c2' : '#e4e6eb',
+              background: msg.senderId === user?.id ? '#8b5cf6' : '#e4e6eb',
               color: msg.senderId === user?.id ? 'white' : '#1c1e21',
               padding: '8px 12px',
               borderRadius: 12,
@@ -95,7 +95,7 @@ export default function ThreadView({ messageId, api, socket, user, onClose }) {
           placeholder="Reply in thread..."
           style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: 20, fontSize: 14, outline: 'none' }}
         />
-        <button onClick={sendReply} style={{ background: '#0a66c2', color: 'white', border: 'none', borderRadius: 20, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={sendReply} style={{ background: '#8b5cf6', color: 'white', border: 'none', borderRadius: 20, padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
           Reply
         </button>
       </div>
