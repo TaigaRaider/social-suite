@@ -9,6 +9,9 @@ import Feed from './pages/Feed';
 import Profile from './pages/Profile';
 import Explore from './pages/Explore';
 import Notifications from './pages/Notifications';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import CookieConsent from './components/CookieConsent';
 import Onboarding from './components/Onboarding';
 import Splash from './components/Splash';
 
@@ -36,6 +39,7 @@ function AppRoutes() {
   return (
     <>
       {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
+      <CookieConsent />
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
@@ -43,6 +47,8 @@ function AppRoutes() {
         <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>

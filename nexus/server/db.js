@@ -2,6 +2,8 @@ import initSqlJs from 'sql.js';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { runMigrations } from './migrations.js';
+import { startBackup } from './backup.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, 'nexus.db');
@@ -247,6 +249,10 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status)');
   db.run('CREATE INDEX IF NOT EXISTS idx_two_factor_userId ON two_factor(userId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)');
+
+  runMigrations(db);
+
+  startBackup(DB_PATH, 'nexus');
 
   process.on('SIGINT', () => { flushDB(); process.exit(0); });
   process.on('SIGTERM', () => { flushDB(); process.exit(0); });

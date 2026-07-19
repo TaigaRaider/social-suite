@@ -13,6 +13,9 @@ import Onboarding from './components/Onboarding';
 import DeviceManager from './components/DeviceManager';
 import ContactImporter from './components/ContactImporter';
 import CallManager from './components/CallManager';
+import CookieConsent from './components/CookieConsent';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { api } from './api';
 import Splash from './components/Splash';
 
@@ -59,6 +62,7 @@ function AppContent() {
       {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
       <BrowserRouter>
         {appSocket && <CallManager socket={appSocket} user={user} />}
+        <CookieConsent />
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
@@ -67,6 +71,8 @@ function AppContent() {
           <Route path="/new-group" element={<ProtectedRoute><NewGroup /></ProtectedRoute>} />
           <Route path="/contacts" element={<ProtectedRoute><ContactImporter api={api} onClose={() => window.history.back()} /></ProtectedRoute>} />
           <Route path="/devices" element={<ProtectedRoute><DeviceManager api={api} /></ProtectedRoute>} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
         </Routes>
       </BrowserRouter>
     </>

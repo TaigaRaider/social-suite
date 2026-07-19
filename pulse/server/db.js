@@ -1,5 +1,7 @@
 import initSqlJs from 'sql.js';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { runMigrations } from './migrations.js';
+import { startBackup } from './backup.js';
 
 const DB_PATH = './pulse.db';
 let db;
@@ -392,6 +394,10 @@ export async function initDB() {
   defaultPacks.forEach(p => {
     db.run(`INSERT OR IGNORE INTO sticker_packs (name, icon, stickers, isBuiltin) VALUES (?, ?, ?, 1)`, [p.name, p.icon, p.stickers]);
   });
+
+  runMigrations(db);
+
+  startBackup(DB_PATH, 'pulse');
 
   saveDB();
   console.log('Database initialized');

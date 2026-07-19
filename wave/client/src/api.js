@@ -1,15 +1,17 @@
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
+
+function getCsrfToken() {
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : '';
+}
 
 async function request(path, options = {}) {
-  const token = localStorage.getItem('wave_token');
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
+    'X-CSRF-Token': getCsrfToken(),
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...options, headers });
   let data;
   try {
     data = await res.json();
@@ -26,6 +28,7 @@ export const api = {
   auth: {
     register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
     login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+    logout: () => request('/auth/logout', { method: 'POST' }),
     me: () => request('/auth/me'),
     getUser: (id) => request(`/auth/user/${id}`),
     updateProfile: (body) => request('/auth/me', { method: 'PUT', body: JSON.stringify(body) }),

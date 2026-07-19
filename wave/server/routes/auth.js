@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
-import { generateToken, auth } from '../auth.js';
+import { generateToken, auth, setTokenCookie, clearTokenCookie } from '../auth.js';
 import { query, queryOne, run } from '../db.js';
 
 const router = Router();
@@ -37,6 +37,7 @@ router.post('/register', [
     );
     const user = queryOne('SELECT id, username, email, firstName, lastName, bio, avatar, status FROM users WHERE id = ?', [result.lastId]);
     const token = generateToken(user);
+    setTokenCookie(res, token);
     res.json({ token, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -58,7 +59,6 @@ router.post('/login', [
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Account lockout check
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
       const remainingMs = new Date(user.lockedUntil) - new Date();
       const remainingMin = Math.ceil(remainingMs / 60000);
@@ -77,17 +77,22 @@ router.post('/login', [
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Reset failed attempts
     run('UPDATE users SET failedAttempts = 0, lockedUntil = NULL WHERE id = ?', [user.id]);
 
     run('UPDATE users SET status = ?, lastSeen = datetime("now") WHERE id = ?', ['online', user.id]);
     const token = generateToken(user);
     const { password: _, ...safeUser } = user;
     safeUser.status = 'online';
+    setTokenCookie(res, token);
     res.json({ token, user: safeUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.post('/logout', (req, res) => {
+  clearTokenCookie(res);
+  res.json({ ok: true });
 });
 
 router.get('/me', auth, (req, res) => {

@@ -14,6 +14,9 @@ import Profile from './pages/Profile';
 import Bookmarks from './pages/Bookmarks';
 import Explore from './pages/Explore';
 import Notifications from './pages/Notifications';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import CookieConsent from './components/CookieConsent';
 import { useState, useCallback } from 'react';
 
 function ProtectedRoute({ children }) {
@@ -40,6 +43,7 @@ function AppRoutes() {
   return (
     <>
       {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
+      <CookieConsent />
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
@@ -49,6 +53,8 @@ function AppRoutes() {
         <Route path="/bookmarks" element={<ProtectedRoute><div className="app-layout"><Navbar /><main className="main-content"><Bookmarks /></main></div></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><div className="app-layout"><Navbar /><main className="main-content"><Notifications /></main></div></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><div className="app-layout"><Navbar /><main className="main-content"><Explore /></main></div></ProtectedRoute>} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
       </Routes>
     </>
   );

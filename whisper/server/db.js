@@ -2,6 +2,8 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runMigrations } from './migrations.js';
+import { startBackup } from './backup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'whisper.db');
@@ -263,6 +265,10 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_createdAt ON audit_log(createdAt)');
   db.run('CREATE INDEX IF NOT EXISTS idx_two_factor_userId ON two_factor(userId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)');
+
+  runMigrations(db);
+
+  startBackup(DB_PATH, 'whisper');
 
   process.on('SIGINT', () => { flushDB(); process.exit(0); });
   process.on('SIGTERM', () => { flushDB(); process.exit(0); });

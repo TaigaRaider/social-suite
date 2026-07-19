@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { query, queryOne, run } from '../db.js';
-import { generateToken, auth } from '../auth.js';
+import { generateToken, auth, setTokenCookie, clearTokenCookie } from '../auth.js';
 import { body, validationResult } from 'express-validator';
 
 const router = Router();
@@ -29,6 +29,7 @@ router.post('/register', [
   const hash = bcrypt.hashSync(password, 10);
   const result = run('INSERT INTO users (username, email, password, firstName, lastName) VALUES (?, ?, ?, ?, ?)', [username, email, hash, firstName || '', lastName || '']);
   const token = generateToken(result.lastInsertRowid);
+  setTokenCookie(res, token);
   res.json({ token, user: { id: result.lastInsertRowid, username, email, firstName: firstName || '', lastName: lastName || '' } });
 });
 
@@ -65,7 +66,13 @@ router.post('/login', [
 
   const token = generateToken(user.id);
   const { password: _, ...safe } = user;
+  setTokenCookie(res, token);
   res.json({ token, user: safe });
+});
+
+router.post('/logout', (req, res) => {
+  clearTokenCookie(res);
+  res.json({ ok: true });
 });
 
 router.get('/me', auth, (req, res) => {

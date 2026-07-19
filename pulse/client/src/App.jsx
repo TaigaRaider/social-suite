@@ -13,6 +13,9 @@ import Splash from './components/Splash';
 import DeviceManager from './components/DeviceManager';
 import ContactImporter from './components/ContactImporter';
 import CallManager from './components/CallManager';
+import CookieConsent from './components/CookieConsent';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { api } from './api';
 import './App.css';
 
@@ -63,6 +66,7 @@ function AppInner() {
         <BrowserRouter>
           <OnboardingGate>
             {appSocket && <CallManager socket={appSocket} user={user} />}
+            <CookieConsent />
             <Routes>
               <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
               <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
@@ -70,6 +74,8 @@ function AppInner() {
               <Route path="/chat/:conversationId" element={<ProtectedRoute><ChatList /></ProtectedRoute>} />
               <Route path="/contacts" element={<ProtectedRoute><ContactImporter api={api} onClose={() => window.history.back()} /></ProtectedRoute>} />
               <Route path="/devices" element={<ProtectedRoute><DeviceManager api={api} /></ProtectedRoute>} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </OnboardingGate>

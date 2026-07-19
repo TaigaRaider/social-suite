@@ -1,16 +1,18 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+function getCsrfToken() {
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : '';
+}
 
 async function request(path, options = {}) {
-  const token = localStorage.getItem('whisper_token');
   const h = {};
   if (!(options.body instanceof FormData)) {
     h['Content-Type'] = 'application/json';
   }
-  if (token) h['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers: { ...h, ...options.headers } });
+  h['X-CSRF-Token'] = getCsrfToken();
+  const res = await fetch(`${API_BASE}${path}`, { credentials: 'include', ...options, headers: { ...h, ...options.headers } });
   if (res.status === 401) {
-    localStorage.removeItem('whisper_token');
-    localStorage.removeItem('whisper_user_id');
     window.location.href = '/login';
     throw new Error('Session expired');
   }
@@ -22,6 +24,7 @@ async function request(path, options = {}) {
 const api = {
   login: (login, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ login, password }) }),
   register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
   getMe: () => request('/auth/me'),
   updateMe: (data) => request('/auth/me', { method: 'PUT', body: JSON.stringify(data) }),
   getUser: (id) => request(`/auth/user/${id}`),

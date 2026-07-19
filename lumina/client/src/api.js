@@ -1,14 +1,18 @@
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
+
+function getCsrfToken() {
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : '';
+}
 
 async function request(path, options = {}) {
-  const token = localStorage.getItem('lumina_token');
   const h = {};
   if (!(options.body instanceof FormData)) {
     h['Content-Type'] = 'application/json';
   }
-  if (token) h['Authorization'] = `Bearer ${token}`;
+  h['X-CSRF-Token'] = getCsrfToken();
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers: { ...h, ...options.headers } });
+  const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...options, headers: { ...h, ...options.headers } });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
@@ -17,10 +21,10 @@ async function request(path, options = {}) {
 async function uploadImage(file) {
   const form = new FormData();
   form.append('image', file);
-  const token = localStorage.getItem('lumina_token');
   const res = await fetch(`${BASE}/posts/upload`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
+    headers: { 'X-CSRF-Token': getCsrfToken() },
     body: form
   });
   const data = await res.json();
@@ -31,6 +35,7 @@ async function uploadImage(file) {
 export const api = {
   register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
   getMe: () => request('/auth/me'),
   getUser: (id) => request(`/auth/user/${id}`),
   updateMe: (body) => request('/auth/me', { method: 'PUT', body: JSON.stringify(body) }),

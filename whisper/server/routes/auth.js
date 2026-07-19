@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import { query, queryOne, run } from '../db.js';
-import { generateToken, auth } from '../auth.js';
+import { generateToken, auth, setTokenCookie, clearTokenCookie } from '../auth.js';
 
 const router = Router();
 
@@ -37,6 +37,7 @@ router.post('/register', [
     );
     const user = queryOne('SELECT id, username, email, firstName, lastName, bio, avatar, createdAt FROM users WHERE id = ?', [result.lastId]);
     const token = generateToken(user);
+    setTokenCookie(res, token);
     res.json({ token, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -75,10 +76,16 @@ router.post('/login', [
 
     const { password: _, ...safeUser } = user;
     const token = generateToken(safeUser);
+    setTokenCookie(res, token);
     res.json({ token, user: safeUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.post('/logout', (req, res) => {
+  clearTokenCookie(res);
+  res.json({ ok: true });
 });
 
 router.get('/me', auth, (req, res) => {

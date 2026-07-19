@@ -2,6 +2,8 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runMigrations } from './migrations.js';
+import { startBackup } from './backup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -490,6 +492,10 @@ export async function initDB() {
   defaultPacks.forEach(p => {
     db.run(`INSERT OR IGNORE INTO sticker_packs (name, icon, stickers, isBuiltin) VALUES (?, ?, ?, 1)`, [p.name, p.icon, p.stickers]);
   });
+
+  runMigrations(db);
+
+  startBackup(DB_PATH, 'wave');
 
   process.on('SIGINT', () => { flushDB(); process.exit(0); });
   process.on('SIGTERM', () => { flushDB(); process.exit(0); });

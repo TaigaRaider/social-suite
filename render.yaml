@@ -1,0 +1,132 @@
+services:
+  # === BACKEND SERVICES ===
+  - type: web
+    name: nexus-api
+    runtime: node
+    rootDir: nexus/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PORT
+        value: 3001
+    healthCheckPath: /api/health
+
+  - type: web
+    name: lumina-api
+    runtime: node
+    rootDir: lumina/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PORT
+        value: 3002
+    healthCheckPath: /api/health
+
+  - type: web
+    name: pulse-api
+    runtime: node
+    rootDir: pulse/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PORT
+        value: 3003
+    healthCheckPath: /api/health
+
+  - type: web
+    name: wave-api
+    runtime: node
+    rootDir: wave/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PORT
+        value: 3004
+    healthCheckPath: /api/health
+
+  - type: web
+    name: whisper-api
+    runtime: node
+    rootDir: whisper/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PORT
+        value: 3005
+    healthCheckPath: /api/health
+
+  # === FRONTEND STATIC SITES ===
+  - type: static_site
+    name: nexus-web
+    rootDir: nexus/client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+  - type: static_site
+    name: lumina-web
+    rootDir: lumina/client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+  - type: static_site
+    name: pulse-web
+    rootDir: pulse/client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+  - type: static_site
+    name: wave-web
+    rootDir: wave/client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+  - type: static_site
+    name: whisper-web
+    rootDir: whisper/client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false

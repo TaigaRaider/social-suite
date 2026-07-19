@@ -1,8 +1,13 @@
-const API = '/api';
+const API = import.meta.env.VITE_API_URL || '/api';
 
 function headers() {
   const token = localStorage.getItem('token');
   return { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
+function getCsrfToken() {
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : '';
 }
 
 async function request(path, opts = {}) {
@@ -10,6 +15,7 @@ async function request(path, opts = {}) {
   if (!(opts.body instanceof FormData)) {
     h['Content-Type'] = 'application/json';
   }
+  h['X-CSRF-Token'] = getCsrfToken();
   const res = await fetch(`${API}${path}`, { headers: h, ...opts });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
@@ -22,7 +28,10 @@ async function uploadImage(file) {
   const token = localStorage.getItem('token');
   const res = await fetch(`${API}/posts/upload`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'X-CSRF-Token': getCsrfToken(),
+    },
     body: form
   });
   const data = await res.json();

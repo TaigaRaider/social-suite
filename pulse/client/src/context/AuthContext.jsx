@@ -50,13 +50,11 @@ export function AuthProvider({ children }) {
   };
 
   const loadUser = useCallback(async () => {
-    const token = localStorage.getItem('pulse_token');
-    if (!token) { setLoading(false); return; }
     try {
       const me = await api.getMe();
       setUser(me);
     } catch {
-      localStorage.removeItem('pulse_token');
+      setUser(null);
     }
     setLoading(false);
   }, []);
@@ -65,7 +63,6 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { token, user } = await api.login(email, password);
-    localStorage.setItem('pulse_token', token);
     setUser(user);
     try {
       initCrypto('http://localhost:3003/api');
@@ -89,7 +86,6 @@ export function AuthProvider({ children }) {
 
   const register = async (data) => {
     const { token, user } = await api.register(data);
-    localStorage.setItem('pulse_token', token);
     setUser(user);
     try {
       initCrypto('http://localhost:3003/api');
@@ -111,8 +107,8 @@ export function AuthProvider({ children }) {
     return user;
   };
 
-  const logout = () => {
-    localStorage.removeItem('pulse_token');
+  const logout = async () => {
+    await api.logout().catch(() => {});
     setUser(null);
   };
 

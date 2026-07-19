@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { createServer } from 'http';
 import { initDB, getDb } from './db.js';
 import { rateLimit, auditLog, sanitizeInput, cleanupOldEntries } from './middleware/security.js';
+import { csrfProtection } from './middleware/csrf.js';
 import { setupWebSocket } from './socket.js';
 import authRoutes from './routes/auth.js';
 import groupRoutes from './routes/groups.js';
@@ -22,28 +23,57 @@ import cryptoRoutes from './routes/crypto.js';
 import accountRoutes from './routes/account.js';
 import adminRoutes from './routes/admin.js';
 import { startKeyRotation } from './keyRotation.js';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 const server = createServer(app);
-const PORT = 3004;
+const PORT = process.env.PORT || 3004;
 
 setupWebSocket(server);
 
 app.use(compression());
 app.use(pinoHttp({ logger }));
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      fontSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'", 'ws:', 'wss:'],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(s => s.trim());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 app.use(sanitizeInput());
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
+app.use(csrfProtection);
 app.use(auditLog(getDb()));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many auth attempts' });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', app: 'wave', timestamp: new Date().toISOString() });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
@@ -58,16 +88,6 @@ app.use('/api/auth', passwordResetRoutes);
 app.use('/api/crypto', cryptoRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/admin', adminRoutes);
-
-app.get('/api/health', (req, res) => {
-  try {
-    const db = getDb();
-    db.exec('SELECT 1');
-    res.json({ status: 'ok', db: 'connected', uptime: process.uptime(), ws: 'active' });
-  } catch (err) {
-    res.status(503).json({ status: 'error', db: 'disconnected', error: err.message });
-  }
-});
 
 app.use((err, req, res, _next) => {
   logger.error({ err, method: req.method, path: req.path }, 'Request error');

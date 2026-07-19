@@ -14,6 +14,9 @@ import Messages from './pages/Messages';
 import Analytics from './pages/Analytics';
 import ScheduledPosts from './pages/ScheduledPosts';
 import Admin from './pages/Admin';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import CookieConsent from './components/CookieConsent';
 import { useState, useCallback } from 'react';
 import './App.css';
 
@@ -38,6 +41,7 @@ function AppRoutes() {
   return (
     <>
       {!onboarded && user && <Onboarding onComplete={() => setOnboarded(true)} />}
+      <CookieConsent />
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
@@ -49,6 +53,8 @@ function AppRoutes() {
         <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
         <Route path="/scheduled" element={<ProtectedRoute><ScheduledPosts /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>

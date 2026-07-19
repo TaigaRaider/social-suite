@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
 const shortcuts = [
-  { keys: ['Ctrl', 'K'] or [' / '], desc: 'Focus search' },
+  { keys: ['Ctrl', 'K'], desc: 'Focus search' },
+  { keys: ['/'], desc: 'Focus search' },
   { keys: ['N'], desc: 'New post' },
   { keys: ['Esc'], desc: 'Close modal' },
   { keys: ['?'], desc: 'Show shortcuts' },

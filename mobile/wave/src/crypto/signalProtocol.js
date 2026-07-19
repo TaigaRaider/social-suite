@@ -17,9 +17,8 @@ function hexToBytes(hex) {
 
 // Simple X25519-like key generation using expo-crypto
 export async function generateIdentityKeyPair() {
-  const randomBytes = Crypto.getRandomValues(32);
+  const randomBytes = Crypto.getRandomBytes(32);
   const privateKey = bytesToHex(randomBytes);
-  // For simplicity, derive publicKey from privateKey using SHA-256
   const publicKeyHash = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
     privateKey
@@ -28,7 +27,7 @@ export async function generateIdentityKeyPair() {
 }
 
 export async function generateSignedPreKey(identityPrivateKey) {
-  const randomBytes = Crypto.getRandomValues(32);
+  const randomBytes = Crypto.getRandomBytes(32);
   const privateKey = bytesToHex(randomBytes);
   const publicKeyHash = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
@@ -45,7 +44,7 @@ export async function generateSignedPreKey(identityPrivateKey) {
 export async function generateOneTimePreKeys(count = 100) {
   const keys = [];
   for (let i = 0; i < count; i++) {
-    const randomBytes = Crypto.getRandomValues(32);
+    const randomBytes = Crypto.getRandomBytes(32);
     const privateKey = bytesToHex(randomBytes);
     const publicKeyHash = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
@@ -57,31 +56,24 @@ export async function generateOneTimePreKeys(count = 100) {
 }
 
 export async function encryptMessage(plaintext, messageKeyHex) {
-  const keyData = hexToBytes(messageKeyHex);
-  const iv = Crypto.getRandomValues(12);
-
-  // Use AES-GCM via expo-crypto
-  const cipher = Crypto.encryptStringSync(
-    plaintext,
-    Crypto.CryptoEncryptionAlgorithm.AES,
-    Crypto.CryptoEncoding.HEX
-  );
+  const aesKey = await Crypto.AESEncryptionKey.generate();
+  const plaintextBase64 = btoa(unescape(encodeURIComponent(plaintext)));
+  const sealedData = await Crypto.aesEncryptAsync(plaintextBase64, aesKey);
+  const combined = await sealedData.combined('base64');
+  const keyHex = await aesKey.encoded('hex');
 
   return {
-    ciphertext: cipher,
-    nonce: bytesToHex(iv)
+    ciphertext: combined,
+    nonce: keyHex,
   };
 }
 
-export async function decryptMessage(ciphertextHex, nonceHex, messageKeyHex) {
-  // Simplified decryption - in production use proper AES-GCM
+export async function decryptMessage(ciphertextBase64, nonceHex, messageKeyHex) {
   try {
-    const decrypted = Crypto.decryptStringSync(
-      ciphertextHex,
-      Crypto.CryptoDecryptionAlgorithm.AES,
-      Crypto.CryptoEncoding.HEX
-    );
-    return decrypted;
+    const aesKey = await Crypto.AESEncryptionKey.import(nonceHex, 'hex');
+    const sealedData = Crypto.AESSealedData.fromCombined(ciphertextBase64);
+    const decryptedBase64 = await Crypto.aesDecryptAsync(sealedData, aesKey, { output: 'base64' });
+    return decodeURIComponent(escape(atob(decryptedBase64)));
   } catch {
     return '[encrypted message]';
   }
@@ -146,8 +138,7 @@ export async function fetchPeerBundle(userId, token) {
 }
 
 export async function sendMessage(peerId, plaintext, token) {
-  // Simplified - generate a random key for this message
-  const messageKey = bytesToHex(Crypto.getRandomValues(32));
+  const messageKey = bytesToHex(Crypto.getRandomBytes(32));
   const { ciphertext, nonce } = await encryptMessage(plaintext, messageKey);
 
   return {

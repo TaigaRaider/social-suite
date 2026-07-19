@@ -1,11 +1,14 @@
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
+
+function getCsrfToken() {
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : '';
+}
 
 async function request(url, options = {}) {
-  const token = localStorage.getItem('pulse_token');
-  const headers = { 'Content-Type': 'application/json', ...options.headers };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const headers = { 'Content-Type': 'application/json', ...options.headers, 'X-CSRF-Token': getCsrfToken() };
 
-  const res = await fetch(`${BASE}${url}`, { ...options, headers });
+  const res = await fetch(`${BASE}${url}`, { credentials: 'include', ...options, headers });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
@@ -14,6 +17,7 @@ async function request(url, options = {}) {
 export const api = {
   login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
   getMe: () => request('/auth/me'),
   getUser: (id) => request(`/auth/user/${id}`),
   updateMe: (data) => request('/auth/me', { method: 'PUT', body: JSON.stringify(data) }),

@@ -9,12 +9,9 @@ export function AuthProvider({ children }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const token = localStorage.getItem('lumina_token');
-      if (!token) { setLoading(false); return; }
       const data = await api.getMe();
       setUser(data);
     } catch {
-      localStorage.removeItem('lumina_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -25,20 +22,18 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const data = await api.login(credentials);
-    localStorage.setItem('lumina_token', data.token);
     setUser(data.user);
     return data;
   };
 
   const register = async (credentials) => {
     const data = await api.register(credentials);
-    localStorage.setItem('lumina_token', data.token);
     setUser(data.user);
     return data;
   };
 
-  const logout = () => {
-    localStorage.removeItem('lumina_token');
+  const logout = async () => {
+    await api.logout().catch(() => {});
     setUser(null);
   };
 

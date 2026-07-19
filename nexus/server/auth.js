@@ -5,19 +5,56 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.warn('[SECURITY] JWT_SECRET environment variable not set. Using auto-generated key. Set JWT_SECRET in production!');
 }
-const SECRET = JWT_SECRET || crypto.randomBytes(64).toString('hex');
+export const SECRET = JWT_SECRET || crypto.randomBytes(64).toString('hex');
+
+const JWT_SECRET_PREV = process.env.JWT_SECRET_PREVIOUS;
+export const SECRET_PREVIOUS = JWT_SECRET_PREV || null;
+
+export const COOKIE_NAME = 'nexus_token';
+const isProd = process.env.NODE_ENV === 'production';
+
+export function setTokenCookie(res, token) {
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+}
+
+export function clearTokenCookie(res) {
+  res.clearCookie(COOKIE_NAME, { path: '/' });
+}
 
 export function generateToken(userId) {
   return jwt.sign({ userId }, SECRET, { expiresIn: '7d' });
 }
 
 export function auth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  let token = null;
+  if (req.cookies && req.cookies[COOKIE_NAME]) {
+    token = req.cookies[COOKIE_NAME];
+  } else {
+    const header = req.headers.authorization;
+    if (header && header.startsWith('Bearer ')) {
+      token = header.split(' ')[1];
+    }
+  }
+  if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
   try {
-    const decoded = jwt.verify(header.split(' ')[1], SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch (err) {
+      if (SECRET_PREVIOUS) {
+        decoded = jwt.verify(token, SECRET_PREVIOUS);
+      } else {
+        throw err;
+      }
+    }
     req.userId = decoded.userId;
     next();
   } catch {

@@ -50,37 +50,31 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('wave_token');
-    if (token) {
-      api.auth.me()
-        .then(u => {
-          setUser(u);
-          setLoading(false);
-          initCrypto('http://localhost:3004/api');
-          if (!isE2EEEnabled()) {
-            generateLocalIdentity();
-          }
-          uploadKeyBundle(token).catch(() => {});
-          const checkPreKeys = async () => {
-            try {
-              const bundle = await api.crypto.getPeerBundle(u.id);
-              if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
-                const newKeys = generateOneTimePreKeys(50);
-                await api.crypto.replenishPreKeys(newKeys);
-              }
-            } catch (e) { /* ignore */ }
-          };
-          checkPreKeys();
-        })
-        .catch(() => { localStorage.removeItem('wave_token'); setLoading(false); });
-    } else {
-      setLoading(false);
-    }
+    api.auth.me()
+      .then(u => {
+        setUser(u);
+        setLoading(false);
+        initCrypto('http://localhost:3004/api');
+        if (!isE2EEEnabled()) {
+          generateLocalIdentity();
+        }
+        uploadKeyBundle().catch(() => {});
+        const checkPreKeys = async () => {
+          try {
+            const bundle = await api.crypto.getPeerBundle(u.id);
+            if (!bundle.oneTimePreKeys || bundle.oneTimePreKeys.length < 10) {
+              const newKeys = generateOneTimePreKeys(50);
+              await api.crypto.replenishPreKeys(newKeys);
+            }
+          } catch (e) { /* ignore */ }
+        };
+        checkPreKeys();
+      })
+      .catch(() => { setLoading(false); });
   }, []);
 
   const login = async (email, password) => {
     const { token, user } = await api.auth.login({ email, password });
-    localStorage.setItem('wave_token', token);
     setUser(user);
     initCrypto('http://localhost:3004/api');
     if (!isE2EEEnabled()) {
@@ -102,7 +96,6 @@ export function AuthProvider({ children }) {
 
   const register = async (data) => {
     const { token, user } = await api.auth.register(data);
-    localStorage.setItem('wave_token', token);
     setUser(user);
     initCrypto('http://localhost:3004/api');
     if (!isE2EEEnabled()) {
@@ -122,8 +115,8 @@ export function AuthProvider({ children }) {
     return user;
   };
 
-  const logout = () => {
-    localStorage.removeItem('wave_token');
+  const logout = async () => {
+    await api.auth.logout().catch(() => {});
     setUser(null);
   };
 

@@ -8,33 +8,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('whisper_token');
-    if (token) {
-      api.getMe().then(u => { setUser(u); localStorage.setItem('whisper_user_id', u.id); setLoading(false); }).catch(() => { localStorage.removeItem('whisper_token'); localStorage.removeItem('whisper_user_id'); setLoading(false); });
-    } else {
-      setLoading(false);
-    }
+    api.getMe().then(u => { setUser(u); setLoading(false); }).catch(() => { setLoading(false); });
   }, []);
 
   const login = async (loginStr, password) => {
-    const { token, user: u } = await api.login(loginStr, password);
-    localStorage.setItem('whisper_token', token);
-    localStorage.setItem('whisper_user_id', u.id);
+    const { user: u } = await api.login(loginStr, password);
     setUser(u);
     return u;
   };
 
   const register = async (data) => {
-    const { token, user: u } = await api.register(data);
-    localStorage.setItem('whisper_token', token);
-    localStorage.setItem('whisper_user_id', u.id);
+    const { user: u } = await api.register(data);
     setUser(u);
     return u;
   };
 
-  const logout = () => {
-    localStorage.removeItem('whisper_token');
-    localStorage.removeItem('whisper_user_id');
+  const logout = async () => {
+    await api.logout().catch(() => {});
     setUser(null);
   };
 

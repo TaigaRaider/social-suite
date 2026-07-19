@@ -2,6 +2,8 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runMigrations } from './migrations.js';
+import { startBackup } from './backup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -241,6 +243,10 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status)');
   db.run('CREATE INDEX IF NOT EXISTS idx_two_factor_userId ON two_factor(userId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)');
+
+  runMigrations(db);
+
+  startBackup(DB_PATH, 'lumina');
 
   saveDB();
 
