@@ -11,7 +11,7 @@
 - MAJOR: Major platform changes
 - MINOR: Feature sprints (resets each major)
 - PATCH: Sprint increments (1.1.0 -> 1.1.1 -> 1.1.2)
-- Current: 1.1.2 (Sprint 4)
+- Current: 1.1.3 (Sprint 5)
 
 ## App Ports & DB Schemas
 | App | Port | Version | Key Features |
@@ -590,6 +590,27 @@ Added indexes on all foreign keys, lookup columns, and frequently queried fields
 - Disappearing messages toggle (⏱️) in chat headers
 - Client-side conversation search for encrypted chats
 - Pre-key replenishment auto-check on login/register
+- All servers syntax OK, all web clients build clean
+
+## Sprint 5 Changelog (v1.1.3)
+- Version bumped 1.1.2 → 1.1.3 across all Expo apps + eas.json (build 5)
+- Push notification infrastructure: push_tokens + notifications DB tables
+- Push token register/unregister API endpoints (Pulse + Wave)
+- In-app notification center with dropdown, mark read, mark all read
+- Notification bell in Navbar for both Pulse and Wave
+- Read receipts: deliveredAt + readAt columns on messages
+- Read receipt indicators on sent messages (✓ Sent → ✓ Delivered → ✓✓ Read)
+- Real-time read receipt socket events
+- Auto-delivery confirmation when receiving messages
+- Group admin controls for Wave:
+  - Member roles (owner/admin/member)
+  - Mute/unmute members
+  - Kick members
+  - Ban/unban members
+  - Transfer ownership
+  - Group settings (description, privacy, member invites)
+  - Leave group
+  - Responsive member list panel with admin actions
 - All servers syntax OK, all web clients build clean
 
 ## Sprint 4 Changelog (v1.1.2)

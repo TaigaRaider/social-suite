@@ -37,4 +37,12 @@ export const api = {
 
   getNotifications: (token) => request('/notifications', { token }),
   markNotificationRead: (id, token) => request(`/notifications/${id}/read`, { method: 'PUT', token }),
+
+  getGroupMembersDetailed: (groupId, token) => request(`/crypto/groups/${groupId}/members`, { token }),
+  muteGroupMember: (groupId, userId, muted, token) => request(`/crypto/groups/${groupId}/members/${userId}/mute`, { method: 'PUT', body: JSON.stringify({ muted }), token }),
+  kickGroupMember: (groupId, userId, token) => request(`/crypto/groups/${groupId}/members/${userId}`, { method: 'DELETE', token }),
+  banGroupMember: (groupId, userId, banned, token) => request(`/crypto/groups/${groupId}/members/${userId}/ban`, { method: 'PUT', body: JSON.stringify({ banned }), token }),
+  updateGroupSettings: (groupId, settings, token) => request(`/crypto/groups/${groupId}/settings`, { method: 'PUT', body: JSON.stringify(settings), token }),
+  leaveGroup: (groupId, token) => request(`/crypto/groups/${groupId}/leave`, { method: 'POST', token }),
+  transferGroupOwnership: (groupId, newOwnerId, token) => request(`/crypto/groups/${groupId}/transfer`, { method: 'PUT', body: JSON.stringify({ newOwnerId }), token }),
 };

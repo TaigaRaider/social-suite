@@ -60,12 +60,24 @@ export async function initDB() {
       groupId INTEGER NOT NULL,
       userId INTEGER NOT NULL,
       role TEXT DEFAULT 'member',
+      muted INTEGER DEFAULT 0,
+      banned INTEGER DEFAULT 0,
       joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (groupId) REFERENCES groups(id),
       FOREIGN KEY (userId) REFERENCES users(id),
       UNIQUE(groupId, userId)
     )
   `);
+
+  try { db.run("ALTER TABLE group_members ADD COLUMN role TEXT DEFAULT 'member'"); } catch(e) {}
+  try { db.run("ALTER TABLE group_members ADD COLUMN muted INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE group_members ADD COLUMN banned INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE group_members ADD COLUMN joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch(e) {}
+
+  try { db.run("ALTER TABLE groups ADD COLUMN description TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE groups ADD COLUMN isPrivate INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE groups ADD COLUMN allowMemberInvite INTEGER DEFAULT 1"); } catch(e) {}
+  try { db.run("ALTER TABLE groups ADD COLUMN createdAt DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch(e) {}
 
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -117,6 +129,17 @@ export async function initDB() {
     )
   `);
 
+  db.run(`CREATE TABLE IF NOT EXISTS push_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    platform TEXT DEFAULT 'unknown',
+    deviceId TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(userId, token),
+    FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
   db.run(`
     CREATE TABLE IF NOT EXISTS reactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,6 +190,7 @@ export async function initDB() {
   )`);
 
   try { db.run("ALTER TABLE messages ADD COLUMN readAt DATETIME DEFAULT NULL"); } catch(e) {}
+  try { db.run("ALTER TABLE messages ADD COLUMN deliveredAt DATETIME DEFAULT NULL"); } catch(e) {}
   try { db.run("ALTER TABLE messages ADD COLUMN edited INTEGER DEFAULT 0"); } catch(e) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS blocks (
@@ -316,6 +340,8 @@ export async function initDB() {
   db.run('CREATE INDEX IF NOT EXISTS idx_prekey_messages_recipient ON prekey_messages(recipientId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_group_keys_group ON group_keys(groupId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_group_key_packages_recipient ON group_key_packages(recipientId, delivered)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_group_members_role ON group_members(groupId, role)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_group_members_banned ON group_members(groupId, banned)');
 
   db.run(`CREATE TABLE IF NOT EXISTS verified_numbers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -383,6 +409,9 @@ export async function initDB() {
 
   db.run('CREATE INDEX IF NOT EXISTS idx_messages_expiresAt ON messages(expiresAt)');
   db.run('CREATE INDEX IF NOT EXISTS idx_disappearing_settings_user ON disappearing_message_settings(userId, groupId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_user ON push_tokens(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_token ON push_tokens(token)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_messages_readAt ON messages(readAt)');
 
   process.on('SIGINT', () => { flushDB(); process.exit(0); });
   process.on('SIGTERM', () => { flushDB(); process.exit(0); });

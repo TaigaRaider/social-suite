@@ -57,5 +57,11 @@ export const api = {
     verifySafetyNumber: (peerId) => request(`/crypto/safety-number/${peerId}/verify`, { method: 'POST' }),
     getSafetyNumberStatus: (peerId) => request(`/crypto/safety-number/${peerId}/status`),
     removeSafetyNumber: (peerId) => request(`/crypto/safety-number/${peerId}`, { method: 'DELETE' }),
+    getNotifications: (limit = 20) => request(`/crypto/notifications?limit=${limit}`),
+    markNotificationRead: (id) => request('/crypto/notifications/read', { method: 'PUT', body: JSON.stringify({ ids: [id] }) }),
+    markAllNotificationsRead: () => request('/crypto/notifications/read', { method: 'PUT' }),
+    registerPushToken: (token, platform, deviceId) => request('/crypto/push/register', { method: 'POST', body: JSON.stringify({ token, platform, deviceId }) }),
+    markMessageRead: (messageId) => request(`/crypto/messages/${messageId}/read`, { method: 'POST' }),
+    getMessageStatus: (messageId) => request(`/crypto/messages/${messageId}/status`),
   },
 };

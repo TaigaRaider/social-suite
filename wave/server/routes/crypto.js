@@ -627,4 +627,303 @@ router.post('/reactions', auth, (req, res) => {
   }
 });
 
+// Register push token
+router.post('/push/register', auth, (req, res) => {
+  try {
+    const { token, platform, deviceId } = req.body;
+    if (!token) return res.status(400).json({ error: 'token required' });
+
+    run(`INSERT OR REPLACE INTO push_tokens (userId, token, platform, deviceId, createdAt)
+      VALUES (?, ?, ?, ?, datetime('now'))`,
+      [req.user.id, token, platform || 'unknown', deviceId || null]);
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to register token' });
+  }
+});
+
+// Unregister push token
+router.post('/push/unregister', auth, (req, res) => {
+  try {
+    const { token } = req.body;
+    run('DELETE FROM push_tokens WHERE userId = ? AND token = ?', [req.user.id, token]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to unregister token' });
+  }
+});
+
+// Get user notifications
+router.get('/notifications', auth, (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const notifications = query(
+      'SELECT * FROM notifications WHERE userId = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?',
+      [req.user.id, limit, offset]
+    );
+    const unread = queryOne(
+      'SELECT COUNT(*) as count FROM notifications WHERE userId = ? AND read = 0',
+      [req.user.id]
+    );
+    res.json({ notifications, unreadCount: unread?.count || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get notifications' });
+  }
+});
+
+// Mark notifications as read
+router.put('/notifications/read', auth, (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (ids && Array.isArray(ids)) {
+      const placeholders = ids.map(() => '?').join(',');
+      run(`UPDATE notifications SET read = 1 WHERE userId = ? AND id IN (${placeholders})`, [req.user.id, ...ids]);
+    } else {
+      run('UPDATE notifications SET read = 1 WHERE userId = ?', [req.user.id]);
+    }
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+// Send read receipt
+router.post('/messages/:messageId/read', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    run("UPDATE messages SET readAt = datetime('now') WHERE id = ? AND receiverId = ?", [messageId, req.user.id]);
+
+    const message = queryOne('SELECT senderId FROM messages WHERE id = ?', [messageId]);
+    if (message) {
+      run(`INSERT INTO notifications (userId, type, title, body, data, createdAt)
+        VALUES (?, 'message_read', 'Message Read', 'Your message was read', ?, datetime('now'))`,
+        [message.senderId, JSON.stringify({ messageId })]);
+    }
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+// Mark message as delivered
+router.post('/messages/:messageId/delivered', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    run("UPDATE messages SET deliveredAt = datetime('now') WHERE id = ? AND deliveredAt IS NULL", [messageId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark delivered' });
+  }
+});
+
+// Get message read status
+router.get('/messages/:messageId/status', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const message = queryOne(
+      'SELECT id, deliveredAt, readAt FROM messages WHERE id = ?',
+      [messageId]
+    );
+    res.json({
+      delivered: !!message?.deliveredAt,
+      read: !!message?.readAt,
+      deliveredAt: message?.deliveredAt,
+      readAt: message?.readAt
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get status' });
+  }
+});
+
+// Get group members with roles
+router.get('/groups/:groupId/members', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const members = query(
+      `SELECT gm.userId, gm.role, gm.muted, gm.banned, gm.joinedAt, u.username, u.firstName, u.lastName
+       FROM group_members gm JOIN users u ON gm.userId = u.id
+       WHERE gm.groupId = ? ORDER BY gm.role DESC, gm.joinedAt ASC`,
+      [groupId]
+    );
+    res.json({ members });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get members' });
+  }
+});
+
+// Update member role (admin/owner only)
+router.put('/groups/:groupId/members/:userId/role', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const userId = parseInt(req.params.userId);
+    const { role } = req.body;
+
+    const caller = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    if (!caller || (caller.role !== 'owner' && caller.role !== 'admin')) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    if (role === 'owner' && caller.role !== 'owner') {
+      return res.status(403).json({ error: 'Only owner can transfer ownership' });
+    }
+
+    run('UPDATE group_members SET role = ? WHERE groupId = ? AND userId = ?', [role, groupId, userId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+
+// Mute/unmute member
+router.put('/groups/:groupId/members/:userId/mute', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const userId = parseInt(req.params.userId);
+    const { muted } = req.body;
+
+    const caller = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    if (!caller || (caller.role !== 'owner' && caller.role !== 'admin')) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    run('UPDATE group_members SET muted = ? WHERE groupId = ? AND userId = ?', [muted ? 1 : 0, groupId, userId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mute member' });
+  }
+});
+
+// Kick member
+router.delete('/groups/:groupId/members/:userId', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const userId = parseInt(req.params.userId);
+
+    const caller = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    if (!caller || (caller.role !== 'owner' && caller.role !== 'admin')) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    const target = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
+    if (target?.role === 'owner') {
+      return res.status(403).json({ error: 'Cannot kick owner' });
+    }
+    if (target?.role === 'admin' && caller.role !== 'owner') {
+      return res.status(403).json({ error: 'Only owner can kick admins' });
+    }
+
+    run('DELETE FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to kick member' });
+  }
+});
+
+// Ban/unban member
+router.put('/groups/:groupId/members/:userId/ban', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const userId = parseInt(req.params.userId);
+    const { banned } = req.body;
+
+    const caller = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    if (!caller || (caller.role !== 'owner' && caller.role !== 'admin')) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    const target = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
+    if (target?.role === 'owner') {
+      return res.status(403).json({ error: 'Cannot ban owner' });
+    }
+
+    if (banned) {
+      run('DELETE FROM group_members WHERE groupId = ? AND userId = ?', [groupId, userId]);
+      run(`INSERT INTO group_members (groupId, userId, role, muted, banned, joinedAt) VALUES (?, ?, 'member', 0, 1, datetime('now'))`,
+        [groupId, userId]);
+    } else {
+      run('DELETE FROM group_members WHERE groupId = ? AND userId = ? AND banned = 1', [groupId, userId]);
+    }
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update ban status' });
+  }
+});
+
+// Update group settings (owner only)
+router.put('/groups/:groupId/settings', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const { name, description, isPrivate, allowMemberInvite } = req.body;
+
+    const caller = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    if (!caller || caller.role !== 'owner') {
+      return res.status(403).json({ error: 'Only owner can update group settings' });
+    }
+
+    if (name !== undefined) run('UPDATE groups SET name = ? WHERE id = ?', [name, groupId]);
+    if (description !== undefined) run('UPDATE groups SET description = ? WHERE id = ?', [description, groupId]);
+    if (isPrivate !== undefined) run('UPDATE groups SET isPrivate = ? WHERE id = ?', [isPrivate ? 1 : 0, groupId]);
+    if (allowMemberInvite !== undefined) run('UPDATE groups SET allowMemberInvite = ? WHERE id = ?', [allowMemberInvite ? 1 : 0, groupId]);
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// Leave group
+router.post('/groups/:groupId/leave', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const member = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+
+    if (!member) return res.status(404).json({ error: 'Not a member' });
+    if (member.role === 'owner') return res.status(400).json({ error: 'Owner cannot leave. Transfer ownership first.' });
+
+    run('DELETE FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to leave group' });
+  }
+});
+
+// Transfer ownership
+router.put('/groups/:groupId/transfer', auth, (req, res) => {
+  try {
+    const groupId = parseInt(req.params.groupId);
+    const { newOwnerId } = req.body;
+
+    const caller = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id]);
+    if (!caller || caller.role !== 'owner') {
+      return res.status(403).json({ error: 'Only owner can transfer ownership' });
+    }
+
+    const target = queryOne('SELECT role FROM group_members WHERE groupId = ? AND userId = ?', [groupId, newOwnerId]);
+    if (!target) return res.status(404).json({ error: 'Target not a member' });
+
+    run('UPDATE group_members SET role = ? WHERE groupId = ? AND userId = ?', ['admin', groupId, req.user.id]);
+    run('UPDATE group_members SET role = ? WHERE groupId = ? AND userId = ?', ['owner', groupId, newOwnerId]);
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to transfer ownership' });
+  }
+});
+
 export default router;

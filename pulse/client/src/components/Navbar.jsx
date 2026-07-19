@@ -14,10 +14,17 @@ export default function Navbar() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     loadUnread();
-    const interval = setInterval(loadUnread, 10000);
+    loadNotifications();
+    const interval = setInterval(() => {
+      loadUnread();
+      loadNotifications();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -25,6 +32,14 @@ export default function Navbar() {
     try {
       const data = await api.getUnreadCount();
       setUnread(data.count);
+    } catch {}
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const data = await api.crypto.getNotifications();
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch {}
   };
 
@@ -63,12 +78,42 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-logo">Pulse</div>
       <div className="navbar-actions">
-        {unread > 0 && (
-          <div className="navbar-btn" title="Notifications">
+        <div style={{ position: 'relative' }}>
+          <div className="navbar-btn" title="Notifications" onClick={() => setShowNotifications(!showNotifications)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span className="badge">{unread > 9 ? '9+' : unread}</span>
+            {unreadCount > 0 && <span className="badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
           </div>
-        )}
+          {showNotifications && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowNotifications(false)} />
+              <div style={{ position: 'absolute', top: '100%', right: 0, width: 360, maxHeight: 480, background: 'var(--bg-primary)', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.15)', overflow: 'hidden', zIndex: 200 }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>Notifications</span>
+                  {unreadCount > 0 && (
+                    <button onClick={async () => { await api.crypto.markAllNotificationsRead(); loadNotifications(); }}
+                      style={{ background: 'none', border: 'none', color: '#0a66c2', cursor: 'pointer', fontSize: 13 }}>
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div style={{ overflowY: 'auto', maxHeight: 400 }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: '#65676b', fontSize: 14 }}>No notifications</div>
+                  ) : (
+                    notifications.slice(0, 20).map(n => (
+                      <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: n.read ? 'transparent' : '#e7f3ff', cursor: 'pointer' }}
+                        onClick={async () => { if (!n.read) { await api.crypto.markNotificationRead(n.id); loadNotifications(); } }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: '#1c1e21' }}>{n.title}</div>
+                        <div style={{ fontSize: 13, color: '#65676b', marginTop: 2 }}>{n.body}</div>
+                        <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

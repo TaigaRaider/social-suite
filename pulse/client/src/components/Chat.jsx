@@ -136,6 +136,24 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
       }));
     });
 
+    socket.on('message:delivered', ({ messageId, deliveredAt }) => {
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, deliveredAt } : m));
+    });
+    socket.on('message:read', ({ messageId, readAt }) => {
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, readAt } : m));
+    });
+
+    socket.on('message:new', (msg) => {
+      if (msg.conversationId === conversation.id) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.message?.id)) return prev;
+          return [...prev, msg.message];
+        });
+        scrollToBottom();
+        socket.emit('message:delivered', { messageId: msg.message?.id });
+      }
+    });
+
     socket.emit('users:online', { userIds: [conversation.otherUserId] }, (status) => {
       if (status[conversation.otherUserId]) setPeerOnline(status[conversation.otherUserId].isOnline);
     });
@@ -260,6 +278,11 @@ export default function Chat({ conversation, onBack, onConversationUpdated }) {
             return (
               <div key={msg.id} style={{ position: 'relative' }}>
                 <MessageBubble message={msg} isSent={isSent} />
+                {isSent && (
+                  <span style={{ fontSize: 11, color: msg.readAt ? '#0a66c2' : msg.deliveredAt ? '#65676b' : '#999', marginLeft: 4 }}>
+                    {msg.readAt ? '\u2713\u2713 Read' : msg.deliveredAt ? '\u2713 Delivered' : '\u2713 Sent'}
+                  </span>
+                )}
                 <button onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)}
                   style={{ position: 'absolute', top: 4, [isSent ? 'left' : 'right']: -28, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5, fontSize: '14px' }}>
                   {String.fromCodePoint(0x1F60A)}

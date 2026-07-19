@@ -486,4 +486,120 @@ router.post('/reactions', auth, (req, res) => {
   }
 });
 
+// Register push token
+router.post('/push/register', auth, (req, res) => {
+  try {
+    const { token, platform, deviceId } = req.body;
+    if (!token) return res.status(400).json({ error: 'token required' });
+
+    run(`INSERT OR REPLACE INTO push_tokens (userId, token, platform, deviceId, createdAt)
+      VALUES (?, ?, ?, ?, datetime('now'))`,
+      [req.userId, token, platform || 'unknown', deviceId || null]);
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to register token' });
+  }
+});
+
+// Unregister push token
+router.post('/push/unregister', auth, (req, res) => {
+  try {
+    const { token } = req.body;
+    run('DELETE FROM push_tokens WHERE userId = ? AND token = ?', [req.userId, token]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to unregister token' });
+  }
+});
+
+// Get user notifications
+router.get('/notifications', auth, (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const notifications = query(
+      'SELECT * FROM notifications WHERE userId = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?',
+      [req.userId, limit, offset]
+    );
+    const unread = queryOne(
+      'SELECT COUNT(*) as count FROM notifications WHERE userId = ? AND read = 0',
+      [req.userId]
+    );
+    res.json({ notifications, unreadCount: unread?.count || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get notifications' });
+  }
+});
+
+// Mark notifications as read
+router.put('/notifications/read', auth, (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (ids && Array.isArray(ids)) {
+      const placeholders = ids.map(() => '?').join(',');
+      run(`UPDATE notifications SET read = 1 WHERE userId = ? AND id IN (${placeholders})`, [req.userId, ...ids]);
+    } else {
+      run('UPDATE notifications SET read = 1 WHERE userId = ?', [req.userId]);
+    }
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+// Send read receipt
+router.post('/messages/:messageId/read', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    run("UPDATE messages SET readAt = datetime('now') WHERE id = ? AND receiverId = ?", [messageId, req.userId]);
+
+    const message = queryOne('SELECT senderId FROM messages WHERE id = ?', [messageId]);
+    if (message) {
+      run(`INSERT INTO notifications (userId, type, title, body, data, createdAt)
+        VALUES (?, 'message_read', 'Message Read', 'Your message was read', ?, datetime('now'))`,
+        [message.senderId, JSON.stringify({ messageId })]);
+    }
+
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+// Mark message as delivered
+router.post('/messages/:messageId/delivered', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    run("UPDATE messages SET deliveredAt = datetime('now') WHERE id = ? AND deliveredAt IS NULL", [messageId]);
+    saveDB();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark delivered' });
+  }
+});
+
+// Get message read status
+router.get('/messages/:messageId/status', auth, (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const message = queryOne(
+      'SELECT id, deliveredAt, readAt FROM messages WHERE id = ?',
+      [messageId]
+    );
+    res.json({
+      delivered: !!message?.deliveredAt,
+      read: !!message?.readAt,
+      deliveredAt: message?.deliveredAt,
+      readAt: message?.readAt
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get status' });
+  }
+});
+
 export default router;

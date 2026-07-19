@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../api';
@@ -9,6 +9,23 @@ export default function Navbar({ user, onLogout, unreadCount = 0 }) {
   const navigate = useNavigate();
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [cryptoUnreadCount, setCryptoUnreadCount] = useState(0);
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const data = await api.crypto.getNotifications();
+      setNotifications(data.notifications || []);
+      setCryptoUnreadCount(data.unreadCount || 0);
+    } catch {}
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -40,13 +57,43 @@ export default function Navbar({ user, onLogout, unreadCount = 0 }) {
           +
         </button>
         <div style={{ position: 'relative' }}>
-          <button className="header-btn" title="Notifications">
+          <button className="header-btn" title="Notifications" onClick={() => setShowNotifications(!showNotifications)}>
             &#128276;
           </button>
-          {unreadCount > 0 && (
+          {(unreadCount > 0 || cryptoUnreadCount > 0) && (
             <span className="unread-badge" style={{ position: 'absolute', top: 2, right: 2, minWidth: 16, height: 16, fontSize: 10, padding: '0 4px' }}>
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {(unreadCount + cryptoUnreadCount) > 99 ? '99+' : unreadCount + cryptoUnreadCount}
             </span>
+          )}
+          {showNotifications && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowNotifications(false)} />
+              <div style={{ position: 'absolute', top: '100%', right: 0, width: 360, maxHeight: 480, background: 'var(--bg-primary)', borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.15)', overflow: 'hidden', zIndex: 200 }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>Notifications</span>
+                  {cryptoUnreadCount > 0 && (
+                    <button onClick={async () => { await api.crypto.markAllNotificationsRead(); loadNotifications(); }}
+                      style={{ background: 'none', border: 'none', color: '#0a66c2', cursor: 'pointer', fontSize: 13 }}>
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div style={{ overflowY: 'auto', maxHeight: 400 }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: '#65676b', fontSize: 14 }}>No notifications</div>
+                  ) : (
+                    notifications.slice(0, 20).map(n => (
+                      <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', background: n.read ? 'transparent' : '#e7f3ff', cursor: 'pointer' }}
+                        onClick={async () => { if (!n.read) { await api.crypto.markNotificationRead(n.id); loadNotifications(); } }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: '#1c1e21' }}>{n.title}</div>
+                        <div style={{ fontSize: 13, color: '#65676b', marginTop: 2 }}>{n.body}</div>
+                        <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
         <div

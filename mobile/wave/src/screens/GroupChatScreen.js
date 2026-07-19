@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform,
+  Modal, ScrollView, Alert,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
@@ -13,6 +14,8 @@ export default function GroupChatScreen({ route, navigation }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [memberCount, setMemberCount] = useState(0);
+  const [showMemberList, setShowMemberList] = useState(false);
+  const [members, setMembers] = useState([]);
   const flatListRef = useRef(null);
 
   const fetchMessages = useCallback(async () => {
@@ -34,10 +37,62 @@ export default function GroupChatScreen({ route, navigation }) {
     }
   }, [groupId, token]);
 
+  const loadDetailedMembers = useCallback(async () => {
+    try {
+      const data = await api.getGroupMembersDetailed(groupId, token);
+      setMembers(data.members || []);
+    } catch (err) {
+      console.log('loadDetailedMembers error:', err.message);
+    }
+  }, [groupId, token]);
+
+  const isGroupAdmin = members.find(m => m.userId === user?._id)?.role === 'admin' || members.find(m => m.userId === user?._id)?.role === 'owner';
+  const isGroupOwner = members.find(m => m.userId === user?._id)?.role === 'owner';
+
+  const handleMuteMember = async (userId, muted) => {
+    try {
+      await api.muteGroupMember(groupId, userId, muted, token);
+      loadDetailedMembers();
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
+  };
+
+  const handleKickMember = async (userId) => {
+    Alert.alert('Kick Member', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Kick', style: 'destructive', onPress: async () => {
+        try {
+          await api.kickGroupMember(groupId, userId, token);
+          loadDetailedMembers();
+          fetchMembers();
+        } catch (err) {
+          Alert.alert('Error', err.message);
+        }
+      }},
+    ]);
+  };
+
+  const handleBanMember = async (userId, banned) => {
+    Alert.alert(banned ? 'Ban Member' : 'Unban Member', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: banned ? 'Ban' : 'Unban', style: 'destructive', onPress: async () => {
+        try {
+          await api.banGroupMember(groupId, userId, banned, token);
+          loadDetailedMembers();
+          fetchMembers();
+        } catch (err) {
+          Alert.alert('Error', err.message);
+        }
+      }},
+    ]);
+  };
+
   useEffect(() => {
     fetchMessages();
     fetchMembers();
-  }, [fetchMessages, fetchMembers]);
+    loadDetailedMembers();
+  }, [fetchMessages, fetchMembers, loadDetailedMembers]);
 
   useEffect(() => {
     const interval = setInterval(fetchMessages, 3000);
@@ -53,12 +108,14 @@ export default function GroupChatScreen({ route, navigation }) {
         </View>
       ),
       headerRight: () => (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Members', { groupId, groupName })}
-          style={styles.membersBtn}
-        >
-          <Text style={styles.membersBtnText}>Members</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => { setShowMemberList(true); loadDetailedMembers(); }}
+            style={styles.membersBtn}
+          >
+            <Text style={styles.membersBtnText}>Members</Text>
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation, groupName, memberCount, groupId]);
@@ -92,6 +149,7 @@ export default function GroupChatScreen({ route, navigation }) {
   };
 
   return (
+    <>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
       <FlatList
         ref={flatListRef}
@@ -121,6 +179,50 @@ export default function GroupChatScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+
+      <Modal visible={showMemberList} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.memberModal}>
+          <View style={styles.memberModalHeader}>
+            <Text style={styles.memberModalTitle}>Members ({members.length})</Text>
+            <TouchableOpacity onPress={() => setShowMemberList(false)}>
+              <Text style={styles.memberModalClose}>Close</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={members}
+            keyExtractor={(item) => String(item.userId)}
+            renderItem={({ item: m }) => (
+              <View style={styles.memberRow}>
+                <View style={styles.memberAvatar}>
+                  <Text style={styles.memberAvatarText}>
+                    {(m.firstName?.[0] || m.username?.[0] || '?').toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.memberName}>
+                    {m.firstName} {m.lastName} {m.role === 'owner' ? '(Owner)' : m.role === 'admin' ? '(Admin)' : ''}
+                  </Text>
+                  <Text style={styles.memberUsername}>@{m.username}</Text>
+                </View>
+                {isGroupAdmin && m.userId !== user?._id && (
+                  <View style={styles.memberActions}>
+                    <TouchableOpacity onPress={() => handleMuteMember(m.userId, !m.muted)} style={styles.memberActionBtn}>
+                      <Text style={styles.memberActionText}>{m.muted ? 'Unmute' : 'Mute'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleKickMember(m.userId)} style={styles.memberActionBtn}>
+                      <Text style={[styles.memberActionText, { color: '#f44336' }]}>Kick</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleBanMember(m.userId, !m.banned)} style={styles.memberActionBtn}>
+                      <Text style={[styles.memberActionText, { color: m.banned ? '#4caf50' : '#ff9800' }]}>{m.banned ? 'Unban' : 'Ban'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          />
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -159,4 +261,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   sendBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  memberModal: { flex: 1, backgroundColor: '#111b21' },
+  memberModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#222d34' },
+  memberModalTitle: { color: '#e9edef', fontSize: 18, fontWeight: '700' },
+  memberModalClose: { color: '#00a884', fontSize: 16, fontWeight: '600' },
+  memberRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#222d34' },
+  memberAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#00a884', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  memberAvatarText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  memberName: { color: '#e9edef', fontSize: 15, fontWeight: '600' },
+  memberUsername: { color: '#8696a0', fontSize: 13, marginTop: 2 },
+  memberActions: { flexDirection: 'row', gap: 8 },
+  memberActionBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+  memberActionText: { color: '#00a884', fontSize: 13, fontWeight: '600' },
 });

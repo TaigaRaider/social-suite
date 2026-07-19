@@ -298,6 +298,93 @@ export function setupWebSocket(server) {
       run('UPDATE users SET status = ?, lastSeen = CURRENT_TIMESTAMP WHERE id = ?', ['offline', userId]);
       io.emit('user:offline', { userId, status: 'offline' });
     });
+
+    // Read receipt (single message)
+    socket.on('message:read-single', ({ messageId }) => {
+      const userId = socket.userId;
+      if (!userId || !messageId) return;
+
+      try {
+        run("UPDATE messages SET readAt = datetime('now') WHERE id = ? AND receiverId = ?", [messageId, userId]);
+
+        const message = queryOne('SELECT senderId FROM messages WHERE id = ?', [messageId]);
+        if (message) {
+          io.to(`user_${message.senderId}`).emit('message:read', { messageId, readBy: userId, readAt: new Date().toISOString() });
+
+          run(`INSERT INTO notifications (userId, fromUserId, type, referenceId, read, createdAt)
+            VALUES (?, ?, 'message_read', ?, 0, datetime('now'))`,
+            [message.senderId, userId, messageId]);
+
+          const senderOnline = queryOne('SELECT isOnline FROM online_status WHERE userId = ?', [message.senderId]);
+          if (!senderOnline || !senderOnline.isOnline) {
+            const tokens = query('SELECT token, platform FROM push_tokens WHERE userId = ?', [message.senderId]);
+            tokens.forEach(t => {
+              console.log(`Push notification queued (read receipt): ${t.token?.slice(0, 10)}... (${t.platform})`);
+            });
+          }
+        }
+
+        saveDB();
+      } catch (e) { /* ignore */ }
+    });
+
+    // Message delivered
+    socket.on('message:delivered', ({ messageId }) => {
+      const userId = socket.userId;
+      if (!userId || !messageId) return;
+
+      try {
+        run("UPDATE messages SET deliveredAt = datetime('now') WHERE id = ? AND deliveredAt IS NULL", [messageId]);
+
+        const message = queryOne('SELECT senderId FROM messages WHERE id = ?', [messageId]);
+        if (message) {
+          io.to(`user_${message.senderId}`).emit('message:delivered', { messageId, deliveredAt: new Date().toISOString() });
+        }
+      } catch (e) { /* ignore */ }
+    });
+
+    // Typing indicator for group chats
+    socket.on('typing:start-group', ({ groupId }) => {
+      const userId = socket.userId;
+      if (!userId || !groupId) return;
+
+      const members = query('SELECT userId FROM group_members WHERE groupId = ?', [groupId]);
+      const user = queryOne('SELECT firstName, lastName, username FROM users WHERE id = ?', [userId]);
+      const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username : 'Someone';
+
+      members.forEach(m => {
+        if (m.userId !== userId) {
+          io.to(`user_${m.userId}`).emit('typing:start-group', { groupId, userId, name });
+        }
+      });
+    });
+
+    socket.on('typing:stop-group', ({ groupId }) => {
+      const userId = socket.userId;
+      if (!userId || !groupId) return;
+
+      const members = query('SELECT userId FROM group_members WHERE groupId = ?', [groupId]);
+      members.forEach(m => {
+        if (m.userId !== userId) {
+          io.to(`user_${m.userId}`).emit('typing:stop-group', { groupId, userId });
+        }
+      });
+    });
+
+    // Notification handlers
+    socket.on('notification:read', ({ notificationId }) => {
+      const userId = socket.userId;
+      if (!userId || !notificationId) return;
+
+      run('UPDATE notifications SET read = 1 WHERE id = ? AND userId = ?', [notificationId, userId]);
+    });
+
+    socket.on('notification:readAll', () => {
+      const userId = socket.userId;
+      if (!userId) return;
+
+      run('UPDATE notifications SET read = 1 WHERE userId = ?', [userId]);
+    });
   });
 
   return io;

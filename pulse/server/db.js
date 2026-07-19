@@ -84,6 +84,17 @@ export async function initDB() {
     FOREIGN KEY (userId) REFERENCES users(id)
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS push_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    platform TEXT DEFAULT 'unknown',
+    deviceId TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(userId, token),
+    FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS reactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     targetId INTEGER NOT NULL,
@@ -110,6 +121,7 @@ export async function initDB() {
   )`);
 
   try { db.run("ALTER TABLE messages ADD COLUMN readAt DATETIME DEFAULT NULL"); } catch(e) {}
+  try { db.run("ALTER TABLE messages ADD COLUMN deliveredAt DATETIME DEFAULT NULL"); } catch(e) {}
   try { db.run("ALTER TABLE messages ADD COLUMN edited INTEGER DEFAULT 0"); } catch(e) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS two_factor (
@@ -299,6 +311,9 @@ export async function initDB() {
 
   db.run('CREATE INDEX IF NOT EXISTS idx_messages_expiresAt ON messages(expiresAt)');
   db.run('CREATE INDEX IF NOT EXISTS idx_disappearing_settings_user ON disappearing_message_settings(userId, peerId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_user ON push_tokens(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_push_tokens_token ON push_tokens(token)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_messages_readAt ON messages(readAt)');
 
   saveDB();
   console.log('Database initialized');
